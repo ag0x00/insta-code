@@ -25,10 +25,12 @@ Build a self-hosted reel research system as a thin end-to-end spine first, then 
   3. A stored finding exists with the media, extracted audio, keyframes, and any caption/metadata
   4. Duplicate submissions of the same reel are skipped
   5. The bot, worker, and queue run as an always-on service driven by env config, with failures logged and surfaced
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 01-01: TBD (set during `/gsd-plan-phase 1`)
+- [ ] 01-01: Cloudflare project skeleton + data model (Wrangler, D1/R2/Queue bindings, submissions/findings schema, shared job + Finding types)
+- [ ] 01-02: Capture Worker — grammY Telegram bot (webhook), reel-shortcode parsing, dedupe, file-to-R2, enqueue + ACK
+- [ ] 01-03: Ingest Container (yt-dlp + ffmpeg) + Queue consumer — hybrid download, audio/keyframe/metadata extraction, Finding finalization, user notify
 
 ### Phase 2: Understand (Transcribe + See)
 **Goal**: Automatically enrich every captured reel with a timestamped transcript (and detected language) and a visual analysis (scene summary + on-screen text) derived from keyframes, stored on the finding.
@@ -96,7 +98,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Capture & Ingest Spine | 0/TBD | Not started | - |
+| 1. Capture & Ingest Spine | 0/3 | Planned | - |
 | 2. Understand (Transcribe + See) | 0/TBD | Not started | - |
 | 3. Analyze & Enrich | 0/TBD | Not started | - |
 | 4. Knowledge System | 0/TBD | Not started | - |

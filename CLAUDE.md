@@ -7,6 +7,7 @@
   - Run scripts with `bun run <script>`.
   - Run files with `bun <file>` and one-off binaries with `bunx <pkg>` (instead of `node` / `npx`).
   - Use `bun test` for the test runner.
+  - **Exception:** Cloudflare Workers run on `workerd`, not Bun. Edge code is built/run/deployed with Wrangler (invoked via `bunx wrangler ...`). Bun remains the package manager, test runner, local script runner, and the base image for the ingest Container.
 
 <!-- GSD:project-start source:PROJECT.md -->
 

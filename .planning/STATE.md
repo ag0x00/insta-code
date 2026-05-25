@@ -21,9 +21,9 @@ See: .planning/PROJECT.md (updated 2026-05-25)
 ## Current Position
 
 Phase: 1 of 5 (Capture & Ingest Spine)
-Plan: 0 of TBD in current phase
-Status: Ready to plan
-Last activity: 2026-05-25 — Project initialized (PROJECT.md, REQUIREMENTS.md, ROADMAP.md, config.json)
+Plan: 0 of 3 in current phase
+Status: Planned — ready to execute
+Last activity: 2026-05-25 — Phase 1 planned (3 plans); architecture locked to all-Cloudflare serverless
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -50,8 +50,9 @@ Progress: [░░░░░░░░░░] 0%
 
 Decisions are logged in PROJECT.md Key Decisions table. Recent decisions affecting current work:
 
-- Init: Hybrid ingestion (yt-dlp + manual file fallback)
-- Init: Telegram bot capture; self-hosted always-on; Bun + TypeScript; SQLite store
+- Phase 1: Architecture locked to all-Cloudflare serverless (Workers + Queues + D1 + R2 + Containers); supersedes self-hosted/SQLite
+- Phase 1: Edge code on workerd (Wrangler); Bun is local toolchain + Container base
+- Phase 1: Telegram capture via grammY Worker; dedupe by reel shortcode; Groq Whisper chosen for Phase 2
 - Init: Full intelligence pipeline (references, claims, code, web-enrichment) is in v1 scope
 
 ### Pending Todos
@@ -60,7 +61,8 @@ None yet.
 
 ### Blockers/Concerns
 
-- Instagram download is best-effort (ToS gray-area, tooling breaks) — Phase 1 must prove the manual file fallback path works end-to-end.
+- Instagram download is best-effort and Cloudflare egress IPs are more prone to blocking — the manual file fallback (CAP-02/ING-02) is load-bearing and must be proven in Phase 1.
+- Cloudflare Containers are newly GA (Apr 2026); watch cold-start/pricing during Phase 1 execution.
 
 ## Deferred Items
 

@@ -49,27 +49,29 @@ Forward a reel and never lose it: it becomes a permanently enriched, cross-refer
 
 ## Constraints
 
-- **Tech stack**: Bun + TypeScript — per project convention (see CLAUDE.md).
-- **Capture**: Telegram bot (grammY) — lowest-friction entry point for ADHD capture, always available from phone.
-- **Ingestion**: yt-dlp + ffmpeg system binaries; hybrid with manual file fallback — resilience against ToS/breakage.
-- **Storage**: SQLite (bun:sqlite) + local media files on disk — simple, private, relational with cross-references.
-- **Transcription**: hosted Whisper API (e.g. Groq/OpenAI whisper-large-v3) — avoids heavy local GPU on a small always-on host; keep pluggable.
-- **AI**: Claude API for vision + analysis/enrichment, with prompt caching — quality multimodal understanding and reasoning.
-- **Deployment**: single small always-on host (cheap VPS or home server) running bot + worker + web.
+- **Platform**: All-Cloudflare serverless — Workers (Telegram webhook + queue consumers), Cloudflare Queues (job pipeline), D1 (knowledge DB), R2 (media storage), Containers (yt-dlp/ffmpeg). No always-on host to maintain.
+- **Edge runtime**: Workers run on `workerd` (V8 isolates) via Wrangler — **not** Bun. Bun stays the local toolchain (package manager, scripts) and the base of the Container image; TypeScript throughout.
+- **Capture**: Telegram bot (grammY) running on a Worker via webhook — lowest-friction, always-available capture.
+- **Ingestion**: Cloudflare Container image bundling yt-dlp + ffmpeg; hybrid (yt-dlp from link, manual file fallback). **Caveat:** Cloudflare egress IPs are more prone to Instagram blocking/ratelimiting (and reels often need login cookies), so the manual file fallback is load-bearing, not just a backup.
+- **Transcription**: Groq Whisper API (whisper-large-v3) via `fetch` — fast/cheap; kept pluggable.
+- **AI**: Claude API for vision + analysis/enrichment, with prompt caching.
+- **Storage**: D1 for findings/metadata/tags/cross-references; R2 for media/audio/keyframes.
 - **Legal/privacy**: best-effort download, personal/private use only; manual file fallback for compliance.
-- **Cost**: per-reel transcription + LLM cost; models must be configurable to control spend.
+- **Cost**: per-reel Groq + Claude cost plus Cloudflare usage (Containers billed on active CPU); models must be configurable to control spend.
 
 ## Key Decisions
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Hybrid ingestion (yt-dlp + manual file fallback) | Low-friction when it works, resilient to ToS/breakage when it doesn't | — Pending |
-| Telegram bot as capture entry point | Near-zero friction, always-available, great for ADHD capture | — Pending |
-| Self-hosted always-on deployment | Capture must work anytime from phone, not only when laptop is on | — Pending |
-| Bun + TypeScript | Project convention | — Pending |
-| SQLite knowledge store + local media | Simple, private, relational + cross-references without infra | — Pending |
+| All-Cloudflare serverless (Workers + Queues + D1 + R2 + Containers) | No always-on host to babysit; Containers (GA Apr 2026) run yt-dlp/ffmpeg; native Queues/D1/R2 cover the pipeline | — Pending |
+| ~~Self-hosted always-on host~~ | Superseded by all-Cloudflare on 2026-05-25 | ⚠️ Revisit (replaced) |
+| Edge code on workerd, Bun for local tooling + Container image | Workers don't run Bun; keeps Bun preference where it applies | — Pending |
+| Hybrid ingestion (yt-dlp + manual file fallback) | Low-friction when it works, resilient when it doesn't; fallback load-bearing on CF IPs | — Pending |
+| Telegram bot (grammY on a Worker) as capture entry point | Near-zero friction, always-available, great for ADHD capture | — Pending |
+| Cloudflare Queues for the job pipeline | Native durable queue with retries; replaces a SQLite-backed queue | — Pending |
+| D1 knowledge store + R2 media | Serverless SQLite (relational + cross-refs) + cheap object storage, no egress fees | — Pending |
 | Claude API for vision + analysis | Strong multimodal understanding and critical reasoning | — Pending |
-| Hosted Whisper for transcription | Avoid heavy local GPU on a small host; keep pluggable | — Pending |
+| Groq Whisper for transcription | Fast/cheap hosted Whisper via fetch; keep pluggable | — Pending |
 | Full intelligence pipeline in v1 | User explicitly wants references, claims, code, and web-enrichment from the start | — Pending |
 
 ## Evolution
@@ -90,4 +92,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-25 after initialization*
+*Last updated: 2026-05-25 after Phase 1 discussion (locked all-Cloudflare architecture)*
