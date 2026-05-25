@@ -21,11 +21,11 @@ See: .planning/PROJECT.md (updated 2026-05-25)
 ## Current Position
 
 Phase: 1 of 5 (Capture & Ingest Spine)
-Plan: 0 of 3 in current phase
-Status: Planned — ready to execute
-Last activity: 2026-05-25 — Phase 1 planned (3 plans); architecture locked to all-Cloudflare serverless
+Plan: 3 of 3 built in current phase
+Status: Code complete — pending user deploy + end-to-end verification
+Last activity: 2026-05-25 — Built Phase 1 (Worker + bot + queue consumer + ingest container); tsc/tests/local-migration/dry-run all green
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [██░░░░░░░░] 20% (1 of 5 phases code-complete)
 
 ## Performance Metrics
 
@@ -73,5 +73,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-05-25
-Stopped at: Project initialized; roadmap created (5 phases). Next: plan Phase 1.
+Stopped at: Phase 1 code built + locally verified. Next: user deploys to Cloudflare (login, provision D1/R2/Queue, R2 token, BotFather, `bun run deploy`, register webhook) and forwards a reel to verify end-to-end; then plan Phase 2 (transcription + vision).
 Resume file: None

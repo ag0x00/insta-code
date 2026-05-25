@@ -1,0 +1,26 @@
+{
+  "name": "reel-atlas",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Self-hosted, single-user research catalog for Instagram reels (capture & ingest spine).",
+  "scripts": {
+    "dev": "bunx wrangler dev",
+    "deploy": "bunx wrangler deploy",
+    "typecheck": "tsc -p tsconfig.json && tsc -p container/tsconfig.json",
+    "test": "bun test",
+    "db:migrate:local": "bunx wrangler d1 migrations apply DB --local",
+    "db:migrate": "bunx wrangler d1 migrations apply DB --remote",
+    "db:tables:local": "bunx wrangler d1 execute DB --local --command \"select name from sqlite_master where type='table'\""
+  },
+  "dependencies": {
+    "@cloudflare/containers": "^0.0.18",
+    "grammy": "^1.30.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250525.0",
+    "bun-types": "^1.3.0",
+    "typescript": "^5.6.0",
+    "wrangler": "^4.0.0"
+  }
+}

@@ -28,9 +28,11 @@ Build a self-hosted reel research system as a thin end-to-end spine first, then 
 **Plans**: 3 plans
 
 Plans:
-- [ ] 01-01: Cloudflare project skeleton + data model (Wrangler, D1/R2/Queue bindings, submissions/findings schema, shared job + Finding types)
-- [ ] 01-02: Capture Worker — grammY Telegram bot (webhook), reel-shortcode parsing, dedupe, file-to-R2, enqueue + ACK
-- [ ] 01-03: Ingest Container (yt-dlp + ffmpeg) + Queue consumer — hybrid download, audio/keyframe/metadata extraction, Finding finalization, user notify
+- [x] 01-01: Cloudflare project skeleton + data model (Wrangler, D1/R2/Queue bindings, submissions/findings schema, shared job + Finding types)
+- [x] 01-02: Capture Worker — grammY Telegram bot (webhook), reel-shortcode parsing, dedupe, file-to-R2, enqueue + ACK
+- [x] 01-03: Ingest Container (yt-dlp + ffmpeg) + Queue consumer — hybrid download, audio/keyframe/metadata extraction, Finding finalization, user notify
+
+_Code complete and locally verified (tsc, bun test, local D1 migration, wrangler dry-run). End-to-end verification pending user deploy (Cloudflare account + Docker + BotFather)._
 
 ### Phase 2: Understand (Transcribe + See)
 **Goal**: Automatically enrich every captured reel with a timestamped transcript (and detected language) and a visual analysis (scene summary + on-screen text) derived from keyframes, stored on the finding.
@@ -98,7 +100,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Capture & Ingest Spine | 0/3 | Planned | - |
+| 1. Capture & Ingest Spine | 3/3 | Code complete (pending deploy verify) | - |
 | 2. Understand (Transcribe + See) | 0/TBD | Not started | - |
 | 3. Analyze & Enrich | 0/TBD | Not started | - |
 | 4. Knowledge System | 0/TBD | Not started | - |
