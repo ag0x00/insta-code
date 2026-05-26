@@ -673,22 +673,13 @@ Also set `PRAGMA busy_timeout = 5000` to auto-retry on locks. WAL mode (`PRAGMA 
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Production host OS and filesystem**
-   - What we know: dev host is Linux; `fs.watch` works here
-   - What's unclear: target production host OS (home server? VPS?)
-   - Recommendation: plan includes a `bun run test:watch` smoke test for the watcher; if it fails, the plan adds chokidar
+1. **Production host OS and filesystem** — **RESOLVED:** Start with Bun-native `fs.watch` (verified working on Linux). Do NOT add chokidar as a dependency now (keeps "no new npm packages"); document it as an optional swap-in in the 01-02 watcher only if the user reports missed events on a non-Linux/network FS.
 
-2. **Collection URL discovery for CAP-05**
-   - What we know: gallery-dl needs the full URL including numeric collection ID (`/saved/COLLECTION-NAME/12345678`)
-   - What's unclear: the user may not know how to find the numeric ID
-   - Recommendation: document the "open collection in browser, copy URL from address bar" workflow in README; alternatively implement an enumeration mode that lists all collections (`/saved/` without collection ID)
+2. **Collection URL discovery for CAP-05** — **RESOLVED:** Document the "open the collection in a browser, copy the URL from the address bar" workflow in 01-03 user_setup. The full URL (incl. numeric collection ID) is provided by the user via env/CLI; no auto-discovery in v1.
 
-3. **yt-dlp merge format**
-   - What we know: yt-dlp may produce `.webm` for some reels
-   - What's unclear: whether the user prefers MP4 or is fine with format-agnostic handling
-   - Recommendation: add `--merge-output-format mp4` to the yt-dlp args (requires ffmpeg); document that this is why ffmpeg is a hard dependency
+3. **yt-dlp merge format** — **RESOLVED:** Add `--merge-output-format mp4` to the yt-dlp args in 01-01 `download.ts`; this is why ffmpeg is a hard dependency (probed at startup).
 
 ---
 
