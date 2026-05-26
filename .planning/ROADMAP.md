@@ -45,14 +45,14 @@ _Re-planned local-first via `/gsd-plan-phase 1` after the 2026-05-26 Cloudflare�
   1. Each processed reel has a timestamped transcript with detected language
   2. Each processed reel has a visual summary and extracted on-screen text
   3. Transcript and visual analysis are stored on the finding and viewable
-**Plans**: 3 plans
+**Plans**: 3 plans (local-first re-plan, 2026-05-26)
 
 Plans:
-- [x] 02-01: Enrichment data model + enrich queue + pipeline wiring (ingest→enrich handoff) — ⚠️ queue/data-model re-platforms to local (SQLite-backed queue + `bun:sqlite`)
-- [x] 02-02: Transcription (Groq Whisper `verbose_json` — text/language/segments) — ✅ runtime-portable, survives the pivot
-- [x] 02-03: Vision (Claude over keyframes — visual summary + on-screen text, prompt caching) — ✅ runtime-portable, survives the pivot
+- [ ] 02-01-PLAN.md — Ingest→enrich handoff end-to-end: extend the SQLite queue with a job `kind` ('ingest'|'enrich'), enrich orchestrator (`enrichFinding`) running transcribe+vision via Promise.allSettled with path confinement + status writes, proven with an ENRICH_FAKE seam [wave 1]
+- [ ] 02-02-PLAN.md — Real transcription: Groq Whisper `verbose_json` over the local audio file (recovered from 607fc16, re-platformed off R2/D1), reusing parseGroqVerboseJson; stubbed-HTTP test [wave 2]
+- [ ] 02-03-PLAN.md — Real vision: Claude (default `claude-haiku-4-5`, prompt caching) over capped local keyframes (recovered from 607fc16), reusing parseClaudeVision; frame+token cost caps; stubbed-HTTP test [wave 2]
 
-_Enrichment logic (transcribe/vision/pure parsers, 12 tests) is runtime-portable and largely survives; only its runtime (Workers/Queues/D1/R2 → Bun/local-queue/SQLite/disk) changes during the Phase 1 re-platform. Live verification still pending GROQ_API_KEY + ANTHROPIC_API_KEY._
+_Re-planned local-first via `/gsd-plan-phase 2` after the Cloudflare→local pivot; the prior all-Cloudflare plans were reverted (archived under `_archive-cloudflare/`). The enrich pass extends the existing Phase 1 SQLite queue/worker (D-01, smallest sound change) — no parallel queue, no new migration beyond a guarded `jobs.kind` column (enrichment columns already exist on `findings`). `src/enrich/parse.ts` parsers reused verbatim; `transcribe.ts`/`vision.ts` recovered from git `607fc16` and re-platformed (R2→Bun.file, D1→bun:sqlite). Vision defaults to Haiku 4.5 with prompt caching. In-sandbox tests stub the Groq/Claude HTTP; live transcription/vision (GROQ_API_KEY + ANTHROPIC_API_KEY against real findings) verifies on the user's host._
 
 ### Phase 3: Analyze & Enrich
 **Goal**: Add the intelligence layer: extract references, identify and critically challenge claims (surfacing assumptions), extract reusable code/pseudo-code, and run web searches to fill gaps and enrich context with citations.
@@ -109,7 +109,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Capture & Ingest Spine | 3/3 | ✓ Complete (verified — 15/15 must-haves; live UAT passed) | 2026-05-26 |
-| 2. Understand (Transcribe + See) | 3/3 | Logic portable; runtime re-platforms during Phase 1 | - |
+| 2. Understand (Transcribe + See) | 0/3 | Planned (local-first re-plan); ready to execute | - |
 | 3. Analyze & Enrich | 0/TBD | Not started | - |
 | 4. Knowledge System | 0/TBD | Not started | - |
 | 5. Visual Catalog Browser | 0/TBD | Not started | - |
