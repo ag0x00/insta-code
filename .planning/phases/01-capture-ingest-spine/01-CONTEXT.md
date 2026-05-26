@@ -2,17 +2,20 @@
 phase: "01"
 name: "capture-ingest-spine"
 created: 2026-05-25
+updated: 2026-05-26
 status: ready-for-planning
 ---
 
 # Phase 1: capture-ingest-spine — Context
 
+> **Rewritten 2026-05-26 for the local-first pivot.** The prior all-Cloudflare/Telegram context (and its 3 plans) were reverted; archived under `_archive-cloudflare/`. See `.planning/PROJECT.md` Key Decisions for the pivot rationale.
+
 <domain>
 ## Phase Boundary
 
-Stand up the all-Cloudflare service so that forwarding an Instagram reel **link** (or sending a **video file** fallback) to the Telegram bot results in: media downloaded/stored, audio + keyframes + metadata extracted, and a structured Finding record persisted — processed asynchronously via a durable queue, with success/failure reported back to the user.
+Stand up the always-on **local** service so that capturing an Instagram reel — by dropping a video file into a watched folder, handing a link to a local CLI/endpoint, or (opt-in) syncing a saved collection — results in: media downloaded (yt-dlp with browser cookies) or ingested from the dropped file, audio + keyframes + metadata extracted (ffmpeg), and a structured Finding record persisted in SQLite — processed asynchronously via a local durable (SQLite-backed) job queue, with success/failure logged and surfaced locally.
 
-In scope: capture (CAP-01..04), ingestion (ING-01..05), the base Finding record (KB-01), and ops plumbing (OPS-01..04).
+In scope: capture (CAP-01..05), ingestion (ING-01..05), the base Finding record (KB-01), and ops plumbing (OPS-01..04).
 Out of scope for this phase: transcription, vision, analysis/enrichment, tagging/cross-refs, and the browse UI (later phases).
 </domain>
 
@@ -20,43 +23,46 @@ Out of scope for this phase: transcription, vision, analysis/enrichment, tagging
 ## Implementation Decisions
 
 ### Platform & runtime
-- **D-01:** All-Cloudflare serverless. Workers (webhook + queue consumer), Cloudflare Queues, D1, R2, and Containers.
-- **D-02:** Edge code targets `workerd` via Wrangler (TypeScript). Bun is the local toolchain (package manager, scripts) and the base image for the Container.
-- **D-03:** Single Wrangler project/repo with: a webhook Worker, a queue-consumer Worker, and a Container service for media processing.
+- **D-01:** **Local-first.** Single always-on host (the user's machine / home server / small VPS). Bun + TypeScript throughout. No Cloudflare, no edge runtime.
+- **D-02:** `yt-dlp` and `ffmpeg` are external **system binaries** invoked as subprocesses (via `Bun.spawn`). Everything else (intake, worker, queue, later web) runs on Bun.
+- **D-03:** The system is a long-lived Bun process (the ingest worker loop) plus a thin intake surface (a CLI command and a small local HTTP endpoint for URL/file submission). Process supervision (systemd/pm2/etc.) is the user's host concern, not built here.
 
-### Capture (Telegram)
-- **D-04:** Telegram bot via grammY, deployed as a Worker using **webhook** mode (not long-polling) and registered against the Worker URL.
-- **D-05:** Bot accepts (a) messages containing an Instagram reel URL and (b) uploaded video files (fallback). Both create a submission and enqueue a job.
-- **D-06:** Bot immediately ACKs receipt, then sends a follow-up message on completion or failure (OPS-04).
-- **D-07:** Deduplicate by Instagram reel **shortcode** parsed from the URL; duplicate submissions are skipped with a "already captured" reply. File-only submissions (no URL) are deduped by content hash.
+### Capture (local intake)
+- **D-04:** Three intake paths, all feeding one local queue: (1) a **watched drop-folder** for video files (load-bearing, zero account-ban risk), (2) **URL intake** via a CLI command and a small local HTTP endpoint, (3) **opt-in saved-collection sync**.
+- **D-05:** Each accepted item creates a `submission` row and enqueues a job. Telegram is **dropped for v1** (see Deferred).
+- **D-06:** Receipt + completion/failure are surfaced locally: structured logs + per-submission status/error persisted in SQLite; the CLI prints the outcome.
+- **D-07:** Deduplicate URL submissions by Instagram reel **shortcode** (parsed from the URL / yt-dlp id); duplicates are skipped. File-only (dropped) submissions dedupe by **content hash**.
+- **D-08:** **Saved-collection sync is opt-in, OFF by default.** Cookie-based, your-account-only, processes in **small batches with randomized delays (jitter)** to avoid a fixed-interval signature. It enumerates the saved collection into reel URLs, then feeds each through the same download path as D-04/D-09. The enumeration tool (yt-dlp cannot list a saved collection; candidates: `gallery-dl`, `instaloader`) is an open research question — see RESEARCH.
 
-### Ingestion (Container)
-- **D-08:** Container image = Bun base + `yt-dlp` + `ffmpeg`. Triggered by the queue-consumer Worker.
-- **D-09:** Hybrid download: try `yt-dlp` on the URL first; on failure (or when only a file was sent) use the user-supplied file pulled from R2.
-- **D-10:** Extract audio to a standalone file (ffmpeg). Extract keyframes via ffmpeg (scene-change sampling with a capped count — exact strategy is Claude's discretion, see below).
-- **D-11:** Capture available metadata (author/handle, caption text, post date, shortcode, duration) from yt-dlp's info JSON when present; tolerate missing fields.
+### Ingestion
+- **D-09:** Download via `yt-dlp --cookies-from-browser <browser>` on the local host (residential IP + the user's logged-in session). **Validated 2026-05-26** (53.9 MiB reel, 785 Chrome cookies). `scripts/fetch-reel.ts` is the seed of this step — the worker should reuse/wrap that approach, not pass URLs through a shell.
+- **D-10:** Fallback to the user-supplied dropped file when no URL is given or the download fails (ING-02).
+- **D-11:** Extract audio to a standalone file (ffmpeg) and representative keyframes (ffmpeg). Exact keyframe strategy/count is Claude's discretion (see below).
+- **D-12:** Capture available metadata (author/handle, caption, post date, shortcode, duration) from yt-dlp's `--write-info-json` output when present; tolerate missing fields.
 
 ### Storage
-- **D-12:** D1 schema includes at least: `submissions` (raw intake + status) and `findings` (the durable record, FK to submission, media keys, metadata, status). Media bytes live in R2; D1 stores R2 keys/paths, never blobs.
-- **D-13:** R2 layout keyed by shortcode/finding id: original media, extracted audio, and keyframes under predictable prefixes.
+- **D-13:** **SQLite via `bun:sqlite`.** At least two tables: `submissions` (raw intake + status) and `findings` (durable record, FK to submission, media paths, metadata, status). The DB stores **file paths, never blobs**.
+- **D-14:** Media/audio/keyframes are **local files on disk** under a `media/` dir, keyed by shortcode/finding id under predictable prefixes. `media/` is git-ignored.
 
 ### Job pipeline & ops
-- **D-14:** Cloudflare Queues carries jobs from webhook → consumer. Rely on Queue retries + a dead-letter path; persist per-submission status/error in D1 for visibility.
-- **D-15:** All secrets/config via Wrangler secrets/vars: `TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET`, plus bindings for D1, R2, Queue, and the Container. (Groq/Claude keys are introduced in later phases.)
-- **D-16:** Structured logging on the Workers/Container; failures both logged and surfaced to the user via the bot.
+- **D-15:** **Local durable, SQLite-backed job queue** with status tracking and retries (a claim/lease + attempt-count pattern). A single worker loop drains it. Replaces Cloudflare Queues; jobs survive process restart.
+- **D-16:** Config via environment (`.env`): cookie browser (e.g. `IG_COOKIES_BROWSER`), `MEDIA_DIR`, DB path, saved-sync on/off + batch/jitter knobs. (Groq/Claude keys arrive in Phase 2.) No bot token.
+- **D-17:** Structured logging; failures both logged and reflected in the submission's status/error so the CLI/endpoint can report them.
 
 ### Claude's Discretion
-- Exact keyframe sampling strategy and count (e.g., scene-change detection vs N-evenly-spaced frames, image dimensions/format).
-- D1 table/column naming and migration tooling layout.
-- R2 key/prefix naming scheme details.
-- Project/folder structure within the Wrangler project.
-- Whether the queue-consumer and webhook are one Worker with multiple handlers or separate Workers.
+- Keyframe sampling strategy and count (scene-change vs N-evenly-spaced; image dims/format).
+- SQLite table/column naming and migration approach (raw SQL vs a tiny migration runner).
+- `media/` key/prefix naming scheme.
+- Drop-folder watcher implementation (`fs.watch` vs a small lib) and debounce/partial-write handling.
+- Queue claim/lease specifics (poll interval, max attempts, backoff).
+- How the local HTTP intake endpoint is shaped and bound (localhost-only).
 </decisions>
 
 <specifics>
 ## Specific Ideas
 
-- Capture must feel instant from the phone: forward/share a reel to the bot, get an immediate ACK, walk away, get a "done" ping later. This is the ADHD-friendly core.
+- Capture should be low-friction: drop a file or paste a URL, walk away, find an enriched entry later. (Phone-forward via Telegram was the original ADHD hook but is dropped for v1; drop-folder + URL cover it.)
+- The validated download produced a merged `Video by rndyrbrts [DYeHzvgCURl].mp4` plus an info-json sidecar — reuse `--write-info-json` for metadata (D-12).
 - Example reels to use as manual test fixtures (provided by the user):
   - https://www.instagram.com/reel/DWpSK4uDhIO/
   - https://www.instagram.com/reel/DYeHzvgCURl/
@@ -67,15 +73,18 @@ Out of scope for this phase: transcription, vision, analysis/enrichment, tagging
 ## Canonical References
 
 **Read before planning/implementing:**
-- `.planning/PROJECT.md` — Constraints and Key Decisions (all-Cloudflare stack)
-- Cloudflare docs: Workers, Queues, D1, R2, and Containers (Worker → Queue → Container + R2 media pattern; Containers GA Apr 2026)
-- grammY docs: webhook deployment on Cloudflare Workers
-- yt-dlp: info-JSON output and selecting/downloading Instagram reel media
+- `.planning/PROJECT.md` — local-first Constraints + Key Decisions (pivot rationale)
+- `.planning/REQUIREMENTS.md` — CAP-01..05, ING-01..05, KB-01, OPS-01..04 wording
+- `scripts/fetch-reel.ts` — the validated `yt-dlp --cookies-from-browser` wrapper (seed of the download step)
+- `CLAUDE.md` — Bun tooling conventions (bun install/run/test; yt-dlp/ffmpeg are system binaries)
+- yt-dlp: `--cookies-from-browser`, `--write-info-json`, `--no-playlist`; ffmpeg: audio extraction + keyframe sampling
+- `bun:sqlite` docs (prepared statements, transactions); Bun.spawn for subprocesses
 </canonical_refs>
 
 <deferred>
 ## Deferred Ideas
 
-- Authenticated yt-dlp via cookies to improve download success (revisit if the bare path proves too flaky).
-- Cloudflare Workers AI Whisper as an alternative to Groq (kept as a fallback option; Groq is the chosen default).
+- **Telegram capture (local long-polling grammY bot)** — dropped for v1; revisit in v2 if phone-forward friction is missed.
+- Other platforms (TikTok/YouTube/X) — keep the download/intake layer pluggable, but Instagram-only for now.
+- Anything Cloudflare (Workers/Queues/D1/R2/Containers) — reverted.
 </deferred>
