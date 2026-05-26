@@ -1,3 +1,0 @@
-# Copy to .dev.vars for local `wrangler dev` (gitignored). Do NOT commit real values.
-TELEGRAM_BOT_TOKEN="123456:your-botfather-token"
-TELEGRAM_WEBHOOK_SECRET="choose-a-long-random-string"
