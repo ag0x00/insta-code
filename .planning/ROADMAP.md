@@ -27,14 +27,14 @@ Build a self-hosted reel research system as a thin end-to-end spine first, then 
   3. A stored finding exists with the media, extracted audio, keyframes, and any caption/metadata
   4. Duplicate submissions of the same reel are skipped
   5. The intake, worker, and queue run as an always-on local service driven by env config, with failures logged and surfaced
-**Plans**: re-plan required (was 3 plans against the reverted Cloudflare stack)
+**Plans**: 3 plans (local-first re-plan, 2026-05-26)
 
-Plans (⚠️ built against reverted all-Cloudflare arch — superseded by local-first re-plan):
-- [~] 01-01: ~~Cloudflare project skeleton + data model (Wrangler, D1/R2/Queue bindings)~~ → re-do as Bun app skeleton + `bun:sqlite` schema + local media dirs
-- [~] 01-02: ~~Capture Worker — grammY Telegram webhook, file-to-R2, enqueue~~ → re-do as local intake (drop-folder watcher + URL CLI/endpoint + opt-in saved-collection sync), enqueue to local queue. Telegram dropped for v1.
-- [~] 01-03: ~~Ingest Container + Queue consumer~~ → re-do as local ingest worker (yt-dlp `--cookies-from-browser` + ffmpeg as local processes), finding finalization, local notify
+Plans:
+- [ ] 01-01-PLAN.md — Re-platform to a Bun app + `bun:sqlite` schema/queue + worker (yt-dlp download, ffmpeg audio/keyframes, metadata, findings) + CLI submit: the thin URL→queue→worker→Finding spine [wave 1]
+- [ ] 01-02-PLAN.md — Intake surface: localhost-only HTTP endpoint + drop-folder watcher + content-hash/shortcode dedup + unified always-on service entry [wave 2]
+- [ ] 01-03-PLAN.md — Opt-in (off-by-default) saved-collection sync via gallery-dl with jittered/capped pacing, feeding the shared deduped queue path [wave 2]
 
-_Original Cloudflare implementation built + locally verified (tsc, bun test, D1 migration, wrangler dry-run) but **reverted** by the 2026-05-26 pivot. Needs re-platforming to local-first via `/gsd-plan-phase 1`. The validated `scripts/fetch-reel.ts` yt-dlp wrapper is the seed of the new local download step._
+_Re-planned local-first via `/gsd-plan-phase 1` after the 2026-05-26 Cloudflare→local pivot. The prior all-Cloudflare/Telegram plans were reverted (archived under `_archive-cloudflare/`). The validated `scripts/fetch-reel.ts` yt-dlp wrapper is the seed of the download step; `src/shared/instagram.ts` + `src/enrich/parse.ts` are reused verbatim. Live IG download + ffmpeg verify on the user's host (sandbox 403s + lacks ffmpeg)._
 
 ### Phase 2: Understand (Transcribe + See)
 **Goal**: Automatically enrich every captured reel with a timestamped transcript (and detected language) and a visual analysis (scene summary + on-screen text) derived from keyframes, stored on the finding.
