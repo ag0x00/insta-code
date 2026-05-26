@@ -30,11 +30,11 @@ Build a self-hosted reel research system as a thin end-to-end spine first, then 
 **Plans**: 3 plans (local-first re-plan, 2026-05-26)
 
 Plans:
-- [ ] 01-01-PLAN.md — Re-platform to a Bun app + `bun:sqlite` schema/queue + worker (yt-dlp download, ffmpeg audio/keyframes, metadata, findings) + CLI submit: the thin URL→queue→worker→Finding spine [wave 1]
-- [ ] 01-02-PLAN.md — Intake surface: localhost-only HTTP endpoint + drop-folder watcher + content-hash/shortcode dedup + unified always-on service entry [wave 2]
-- [ ] 01-03-PLAN.md — Opt-in (off-by-default) saved-collection sync via gallery-dl with jittered/capped pacing, feeding the shared deduped queue path [wave 2]
+- [x] 01-01-PLAN.md — Re-platform to a Bun app + `bun:sqlite` schema/queue + worker (yt-dlp download, ffmpeg audio/keyframes, metadata, findings) + CLI submit: the thin URL→queue→worker→Finding spine [wave 1] — code complete, 50-test suite green; ⚠ live IG+ffmpeg run pending on user host
+- [x] 01-02-PLAN.md — Intake surface: localhost-only HTTP endpoint + drop-folder watcher + content-hash/shortcode dedup + unified always-on service entry [wave 2] — code complete; ⚠ live drop-folder run pending on user host
+- [x] 01-03-PLAN.md — Opt-in (off-by-default) saved-collection sync via gallery-dl with jittered/capped pacing, feeding the shared deduped queue path [wave 2] — code complete; ⚠ optional live sync pending on user host
 
-_Re-planned local-first via `/gsd-plan-phase 1` after the 2026-05-26 Cloudflare→local pivot. The prior all-Cloudflare/Telegram plans were reverted (archived under `_archive-cloudflare/`). The validated `scripts/fetch-reel.ts` yt-dlp wrapper is the seed of the download step; `src/shared/instagram.ts` + `src/enrich/parse.ts` are reused verbatim. Live IG download + ffmpeg verify on the user's host (sandbox 403s + lacks ffmpeg)._
+_Re-planned local-first via `/gsd-plan-phase 1` after the 2026-05-26 Cloudflare→local pivot; executed 2026-05-26. The prior all-Cloudflare/Telegram plans were reverted (archived under `_archive-cloudflare/`); dead Cloudflare artifacts (wrangler.toml, container/, D1 migrations) removed. `src/shared/instagram.ts` + `src/enrich/parse.ts` reused verbatim. **Code complete: typecheck clean + 50/50 tests green in-sandbox (stubbed yt-dlp/ffmpeg/gallery-dl).** Each plan ends in a `human-action` checkpoint — live IG download + ffmpeg + drop-folder + (optional) gallery-dl sync verify on the user's host (sandbox 403s Instagram + lacks ffmpeg). Phase is **code-complete, awaiting user-host live verification.**_
 
 ### Phase 2: Understand (Transcribe + See)
 **Goal**: Automatically enrich every captured reel with a timestamped transcript (and detected language) and a visual analysis (scene summary + on-screen text) derived from keyframes, stored on the finding.
@@ -108,7 +108,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Capture & Ingest Spine | 0/TBD | ⚠️ Re-plan for local-first (Cloudflare build reverted) | - |
+| 1. Capture & Ingest Spine | 3/3 | Code complete (50 tests green); ⚠ live verify pending on user host | - |
 | 2. Understand (Transcribe + See) | 3/3 | Logic portable; runtime re-platforms during Phase 1 | - |
 | 3. Analyze & Enrich | 0/TBD | Not started | - |
 | 4. Knowledge System | 0/TBD | Not started | - |
