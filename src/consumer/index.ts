@@ -1,5 +1,6 @@
 import { getContainer } from "@cloudflare/containers";
 import {
+  getFindingIdBySubmission,
   getSubmission,
   setSubmissionStatus,
   upsertFinding,
@@ -39,10 +40,16 @@ async function processOne(env: Env, job: JobMessage): Promise<void> {
 
   const label = result.metadata.caption?.slice(0, 80) ?? submission?.reel_shortcode ?? "reel";
   await notify(env, job.telegramChatId, `✓ Captured: ${label}`);
+
+  // Hand off to the enrichment pipeline (transcription + vision).
+  const findingId = await getFindingIdBySubmission(env.DB, job.submissionId);
+  if (findingId) {
+    await env.ENRICH_QUEUE.send({ findingId, telegramChatId: job.telegramChatId });
+  }
 }
 
-/** Cloudflare Queue consumer. max_batch_size is 1 (see wrangler.toml). */
-export async function handleQueueBatch(
+/** Cloudflare Queue consumer for `reel-ingest`. max_batch_size is 1 (see wrangler.toml). */
+export async function handleIngestBatch(
   batch: MessageBatch<JobMessage>,
   env: Env,
 ): Promise<void> {

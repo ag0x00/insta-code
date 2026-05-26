@@ -50,7 +50,7 @@
 
 ### Browse
 
-- [ ] **BRW-01**: User can open a web app and see a visual catalog of findings as thumbnail cards
+- [ ] **BRW-01**: User can open a web app and see a visual catalog rendered as a wall of generated examples / visualizations / animations derived from findings (NOT reel thumbnails)
 - [ ] **BRW-02**: User can filter and browse by category and tag
 - [ ] **BRW-03**: User can search and open a finding's detail view (transcript, visual summary, references, claims, code, links)
 - [ ] **BRW-04**: Catalog presents an aesthetically pleasing, animated browsing experience
@@ -69,6 +69,7 @@
 - **GRAPH-01**: Interactive semantic graph visualization of findings and cross-references
 - **EMBED-01**: Embeddings-based semantic similarity, clustering, and "related findings"
 - **GEN-01**: Scaffold new generative projects from selected findings ("build on top of it")
+- **ART-01** *(candidate for v1 — see ROADMAP Phase 5 scope note)*: Each finding gets a renderable "buildable artifact" (runnable snippet / visualization spec) so the catalog wall can display generated examples rather than reel thumbnails. Auto-generated vs curated is an open decision.
 
 ### Platform
 

@@ -46,6 +46,7 @@ Forward a reel and never lose it: it becomes a permanently enriched, cross-refer
 - Domain of the reels: creative-technical — generative design/art, music, code experiments, and LLM techniques. Findings should preserve technique-level detail (code/pseudo-code) and aesthetic/emotional references.
 - Example reels provided by the user (public reel URLs) span this creative-technical space.
 - Instagram has no official API for arbitrary reel media/audio; programmatic downloading is a ToS gray area and downloader tooling breaks periodically — hence the hybrid ingestion strategy with a manual file fallback.
+- **UI intent (clarified 2026-05-26):** the browsable catalog is a *wall of cool examples, visualizations, and animations* — the decomposed/generated outputs — **not** a grid of reel thumbnails. Reels are raw sources for ingestion + decomposition. This pulls the generative angle toward the core experience and shapes Phase 5 (see ROADMAP scope note + REQUIREMENTS ART-01).
 
 ## Constraints
 
@@ -73,6 +74,7 @@ Forward a reel and never lose it: it becomes a permanently enriched, cross-refer
 | Claude API for vision + analysis | Strong multimodal understanding and critical reasoning | — Pending |
 | Groq Whisper for transcription | Fast/cheap hosted Whisper via fetch; keep pluggable | — Pending |
 | Full intelligence pipeline in v1 | User explicitly wants references, claims, code, and web-enrichment from the start | — Pending |
+| Catalog = wall of generated artifacts, not reel thumbnails | User's UI intent: surface decomposed examples/visualizations/animations to build on | — Pending |
 
 ## Evolution
 
@@ -92,4 +94,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-25 after Phase 1 discussion (locked all-Cloudflare architecture)*
+*Last updated: 2026-05-26 after Phase 2 build + UI-vision clarification (catalog = wall of generated artifacts)*

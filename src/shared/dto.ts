@@ -17,6 +17,14 @@ export interface Submission {
   updated_at: string;
 }
 
+export type EnrichStatus = "pending" | "processing" | "done" | "failed";
+
+export interface TranscriptSegment {
+  start: number;
+  end: number;
+  text: string;
+}
+
 export interface Finding {
   id: string;
   submission_id: string;
@@ -29,6 +37,14 @@ export interface Finding {
   audio_key: string | null;
   keyframe_keys: string[];
   status: SubmissionStatus;
+  // Phase 2 enrichment
+  transcript: string | null;
+  transcript_language: string | null;
+  transcript_segments: TranscriptSegment[];
+  visual_summary: string | null;
+  onscreen_text: string | null;
+  enrich_status: EnrichStatus;
+  enriched_at: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -47,6 +63,25 @@ export interface JobMessage {
   sourceUrl?: string;
   uploadedFileKey?: string;
   telegramChatId: number;
+}
+
+/** The contract carried over the enrich Queue (ingest consumer -> enrich consumer). */
+export interface EnrichJob {
+  findingId: string;
+  telegramChatId: number;
+}
+
+/** Result of transcription (Groq Whisper verbose_json). */
+export interface TranscriptResult {
+  text: string;
+  language: string | null;
+  segments: TranscriptSegment[];
+}
+
+/** Result of vision analysis (Claude over keyframes). */
+export interface VisionResult {
+  visual_summary: string;
+  onscreen_text: string;
 }
 
 /** Result returned by the ingest Container's POST /ingest. */

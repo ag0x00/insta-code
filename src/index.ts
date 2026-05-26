@@ -1,8 +1,9 @@
 import { Container } from "@cloudflare/containers";
 import { webhookCallback } from "grammy";
-import { handleQueueBatch } from "./consumer";
+import { handleIngestBatch } from "./consumer";
+import { handleEnrichBatch } from "./enrich";
 import { createBot } from "./webhook/bot";
-import type { Env, JobMessage } from "./shared/types";
+import type { EnrichJob, Env, JobMessage } from "./shared/types";
 
 /**
  * The ingest Container (yt-dlp + ffmpeg), backed by ./container/Dockerfile.
@@ -43,7 +44,11 @@ export default {
     return webhookCallback(bot, "cloudflare-mod")(req);
   },
 
-  async queue(batch: MessageBatch<JobMessage>, env: Env): Promise<void> {
-    await handleQueueBatch(batch, env);
+  async queue(batch: MessageBatch<JobMessage | EnrichJob>, env: Env): Promise<void> {
+    if (batch.queue === "reel-enrich") {
+      await handleEnrichBatch(batch as MessageBatch<EnrichJob>, env);
+    } else {
+      await handleIngestBatch(batch as MessageBatch<JobMessage>, env);
+    }
   },
 };

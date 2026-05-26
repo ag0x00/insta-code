@@ -43,10 +43,14 @@ _Code complete and locally verified (tsc, bun test, local D1 migration, wrangler
   1. Each processed reel has a timestamped transcript with detected language
   2. Each processed reel has a visual summary and extracted on-screen text
   3. Transcript and visual analysis are stored on the finding and viewable
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 02-01: TBD (set during `/gsd-plan-phase 2`)
+- [x] 02-01: Enrichment data model + `reel-enrich` queue + pipeline wiring (ingest→enrich handoff, queue routing)
+- [x] 02-02: Transcription (Groq Whisper `verbose_json` — text/language/segments)
+- [x] 02-03: Vision (Claude over keyframes — visual summary + on-screen text, prompt caching)
+
+_Code complete and locally verified (12 tests, tsc, local migration, wrangler dry-run). Live verification pending user deploy with GROQ_API_KEY + ANTHROPIC_API_KEY._
 
 ### Phase 3: Analyze & Enrich
 **Goal**: Add the intelligence layer: extract references, identify and critically challenge claims (surfacing assumptions), extract reusable code/pseudo-code, and run web searches to fill gaps and enrich context with citations.
@@ -79,15 +83,17 @@ Plans:
 - [ ] 04-01: TBD (set during `/gsd-plan-phase 4`)
 
 ### Phase 5: Visual Catalog Browser
-**Goal**: Deliver the web app for browsing the catalog visually — thumbnail cards, filter by category/tag, search, a rich detail view, and an aesthetically pleasing, animated experience.
+**Goal**: Deliver the web app for browsing the catalog visually as **a wall of generated examples / visualizations / animations** (the decomposed outputs — NOT reel thumbnails), with filter by category/tag, search, a rich detail view, and an aesthetically pleasing, animated experience.
 **Depends on**: Phase 4
 **Mode:** mvp
 **Requirements**: BRW-01, BRW-02, BRW-03, BRW-04
 **Success Criteria** (what must be TRUE):
-  1. User can open the web app and see a visual catalog of findings as thumbnail cards
+  1. User can open the web app and see a visual wall of findings rendered as generated artifacts/visualizations (not reel thumbnails)
   2. User can filter/browse by category and tag and search
   3. User can open a finding detail view with transcript, visual summary, references, claims, code, and links
   4. Browsing feels aesthetically pleasing and animated
+
+> **Scope note (user clarification, 2026-05-26):** the catalog is a wall of *cool examples/visualizations/animations* derived from reels, not the reels themselves. This implies findings need a renderable/"buildable" artifact (e.g. runnable snippet or visualization spec). Whether those artifacts are auto-generated per finding or curated is an **open fork to settle in a Phase 5 discussion**, and may add a phase between Knowledge System and Browse (relates to v2 `GEN-01`).
 **Plans**: TBD
 
 Plans:
@@ -101,7 +107,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Capture & Ingest Spine | 3/3 | Code complete (pending deploy verify) | - |
-| 2. Understand (Transcribe + See) | 0/TBD | Not started | - |
+| 2. Understand (Transcribe + See) | 3/3 | Code complete (pending deploy verify) | - |
 | 3. Analyze & Enrich | 0/TBD | Not started | - |
 | 4. Knowledge System | 0/TBD | Not started | - |
 | 5. Visual Catalog Browser | 0/TBD | Not started | - |

@@ -20,12 +20,12 @@ See: .planning/PROJECT.md (updated 2026-05-25)
 
 ## Current Position
 
-Phase: 1 of 5 (Capture & Ingest Spine)
-Plan: 3 of 3 built in current phase
-Status: Code complete — pending user deploy + end-to-end verification
-Last activity: 2026-05-25 — Built Phase 1 (Worker + bot + queue consumer + ingest container); tsc/tests/local-migration/dry-run all green
+Phase: 2 of 5 (Understand — Transcribe + See) — code complete
+Plan: 3 of 3 built in Phase 2
+Status: Phases 1 & 2 code-complete — pending user deploy + end-to-end verification
+Last activity: 2026-05-26 — Built Phase 2 (reel-enrich queue, Groq transcription, Claude vision); 12 tests/tsc/local-migration/dry-run all green
 
-Progress: [██░░░░░░░░] 20% (1 of 5 phases code-complete)
+Progress: [████░░░░░░] 40% (2 of 5 phases code-complete)
 
 ## Performance Metrics
 
@@ -63,6 +63,7 @@ None yet.
 
 - Instagram download is best-effort and Cloudflare egress IPs are more prone to blocking — the manual file fallback (CAP-02/ING-02) is load-bearing and must be proven in Phase 1.
 - Cloudflare Containers are newly GA (Apr 2026); watch cold-start/pricing during Phase 1 execution.
+- Phase 5 open fork: catalog wall shows *generated artifacts*, not reel thumbnails (user clarification). Whether artifacts are auto-generated per finding or curated needs a Phase 5 discussion (see REQUIREMENTS ART-01).
 
 ## Deferred Items
 
@@ -72,6 +73,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-25
-Stopped at: Phase 1 code built + locally verified. Next: user deploys to Cloudflare (login, provision D1/R2/Queue, R2 token, BotFather, `bun run deploy`, register webhook) and forwards a reel to verify end-to-end; then plan Phase 2 (transcription + vision).
+Last session: 2026-05-26
+Stopped at: Phases 1 & 2 code built + locally verified. Next: user deploys to Cloudflare (provision D1/R2/Queues incl. reel-enrich, R2 token, BotFather, GROQ_API_KEY + ANTHROPIC_API_KEY, `bun run deploy`, register webhook) and forwards a reel to verify capture → transcript + visual analysis end-to-end; then plan Phase 3 (analyze & enrich).
 Resume file: None

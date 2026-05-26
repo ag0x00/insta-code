@@ -31,6 +31,14 @@ create table findings (
   audio_key       text,
   keyframe_keys   text not null default '[]',
   status          text not null default 'done',
+  -- Phase 2 enrichment
+  transcript           text,
+  transcript_language  text,
+  transcript_segments  text, -- JSON array of {start,end,text}
+  visual_summary       text,
+  onscreen_text        text,
+  enrich_status        text not null default 'pending',
+  enriched_at          text,
   created_at      text not null default (datetime('now')),
   updated_at      text not null default (datetime('now'))
 );

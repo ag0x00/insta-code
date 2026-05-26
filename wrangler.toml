@@ -31,6 +31,19 @@ max_batch_size = 1
 max_retries = 3
 dead_letter_queue = "reel-ingest-dlq"
 
+# Enrichment pipeline (Phase 2): transcription + vision, decoupled from download.
+# Provision:  bunx wrangler queues create reel-enrich
+#             bunx wrangler queues create reel-enrich-dlq
+[[queues.producers]]
+binding = "ENRICH_QUEUE"
+queue = "reel-enrich"
+
+[[queues.consumers]]
+queue = "reel-enrich"
+max_batch_size = 1
+max_retries = 3
+dead_letter_queue = "reel-enrich-dlq"
+
 # --- Container (yt-dlp + ffmpeg ingest) ---
 # The IngestContainer class is exported from src/index.ts and backed by the
 # image in ./container/Dockerfile. Implemented in plan 01-03.
@@ -52,5 +65,9 @@ new_sqlite_classes = ["IngestContainer"]
 #   TELEGRAM_BOT_TOKEN        - from @BotFather
 #   TELEGRAM_WEBHOOK_SECRET   - self-chosen random string (verifies webhook calls)
 # Local dev reads these from .dev.vars (see .dev.vars.example).
+[vars]
+# Vision model for Phase 2 enrichment (override to claude-haiku-4-5 to cut cost).
+CLAUDE_MODEL = "claude-sonnet-4-6"
+
 [observability]
 enabled = true

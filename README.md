@@ -71,6 +71,26 @@ Requires a Cloudflare account, Docker (to build the container image), and a Tele
    ```
 8. **Test:** forward a reel to your bot. You should get an instant ACK, then a `✓ Captured` message; check the `findings` table in D1.
 
+## Phase 2 — Understand (transcription + vision)
+
+After a finding is captured, an enrichment job (`reel-enrich` queue) transcribes the audio (Groq
+Whisper) and analyzes the keyframes (Claude vision), storing transcript + language + segments and a
+visual summary + on-screen text on the finding, then pings you "🧠 Understood".
+
+Additional one-time setup on top of Phase 1:
+
+```bash
+bunx wrangler queues create reel-enrich
+bunx wrangler queues create reel-enrich-dlq
+bunx wrangler secret put GROQ_API_KEY        # console.groq.com
+bunx wrangler secret put ANTHROPIC_API_KEY   # console.anthropic.com
+bun run db:migrate                           # applies 0002_enrichment.sql remotely
+bun run deploy
+```
+
+`CLAUDE_MODEL` (in `wrangler.toml` `[vars]`) defaults to `claude-sonnet-4-6`; set it to
+`claude-haiku-4-5` to cut vision cost.
+
 ## Notes & caveats
 
 - **Instagram downloads are best-effort.** Cloudflare egress IPs are more prone to blocking/ratelimiting (and many reels need login cookies), so the **manual file fallback** (send the video to the bot) is a first-class path, not just a backup.

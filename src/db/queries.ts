@@ -1,4 +1,12 @@
-import type { Finding, IngestResult, Submission, SubmissionStatus } from "../shared/types";
+import type {
+  EnrichStatus,
+  Finding,
+  IngestResult,
+  Submission,
+  SubmissionStatus,
+  TranscriptResult,
+  VisionResult,
+} from "../shared/types";
 
 export interface NewSubmission {
   id: string;
@@ -120,10 +128,80 @@ export async function upsertFinding(
     .run();
 }
 
-/** Hydrates a Finding row into the typed shape (parses keyframe_keys JSON). */
+/** Hydrates a Finding row into the typed shape (parses JSON columns). */
 export function rowToFinding(row: Record<string, unknown>): Finding {
   return {
     ...(row as unknown as Finding),
     keyframe_keys: JSON.parse((row.keyframe_keys as string) ?? "[]"),
+    transcript_segments: JSON.parse((row.transcript_segments as string) ?? "[]"),
   };
+}
+
+export async function getFindingIdBySubmission(
+  db: D1Database,
+  submissionId: string,
+): Promise<string | null> {
+  const row = await db
+    .prepare(`select id from findings where submission_id = ? limit 1`)
+    .bind(submissionId)
+    .first<{ id: string }>();
+  return row?.id ?? null;
+}
+
+export async function getFinding(db: D1Database, id: string): Promise<Finding | null> {
+  const row = await db
+    .prepare(`select * from findings where id = ? limit 1`)
+    .bind(id)
+    .first<Record<string, unknown>>();
+  return row ? rowToFinding(row) : null;
+}
+
+export async function setEnrichStatus(
+  db: D1Database,
+  findingId: string,
+  status: EnrichStatus,
+): Promise<void> {
+  await db
+    .prepare(`update findings set enrich_status = ?, updated_at = datetime('now') where id = ?`)
+    .bind(status, findingId)
+    .run();
+}
+
+export async function updateFindingTranscript(
+  db: D1Database,
+  findingId: string,
+  t: TranscriptResult,
+): Promise<void> {
+  await db
+    .prepare(
+      `update findings set transcript = ?, transcript_language = ?, transcript_segments = ?,
+       updated_at = datetime('now') where id = ?`,
+    )
+    .bind(t.text, t.language, JSON.stringify(t.segments), findingId)
+    .run();
+}
+
+export async function updateFindingVision(
+  db: D1Database,
+  findingId: string,
+  v: VisionResult,
+): Promise<void> {
+  await db
+    .prepare(
+      `update findings set visual_summary = ?, onscreen_text = ?,
+       updated_at = datetime('now') where id = ?`,
+    )
+    .bind(v.visual_summary, v.onscreen_text, findingId)
+    .run();
+}
+
+/** Marks enrichment complete (status done + timestamp). */
+export async function markEnriched(db: D1Database, findingId: string): Promise<void> {
+  await db
+    .prepare(
+      `update findings set enrich_status = 'done', enriched_at = datetime('now'),
+       updated_at = datetime('now') where id = ?`,
+    )
+    .bind(findingId)
+    .run();
 }
