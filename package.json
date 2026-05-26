@@ -7,6 +7,7 @@
   "scripts": {
     "worker": "bun run src/index.ts",
     "submit": "bun run src/intake/cli.ts",
+    "sync": "bun run src/sync/cli.ts",
     "migrate": "bun run src/db/migrate.ts",
     "typecheck": "tsc -p tsconfig.json",
     "test": "bun test"
