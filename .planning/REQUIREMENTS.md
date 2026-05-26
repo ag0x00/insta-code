@@ -11,7 +11,7 @@
 - [ ] **CAP-02**: User can drop a video file into a watched local folder (load-bearing path, also the fallback when link download fails)
 - [ ] **CAP-03**: System records receipt and surfaces when processing completes or fails (local notification + log)
 - [ ] **CAP-04**: Duplicate submissions of the same reel are detected and not re-processed
-- [ ] **CAP-05**: User can opt in to syncing a saved Instagram collection (off by default, cookie-based, small batches with delays); new items are enqueued like any other capture
+- [ ] **CAP-05**: User can opt in to syncing a saved Instagram collection (off by default, cookie-based, small batches with **randomized delays** to avoid a fixed-interval pattern); new items are enqueued like any other capture
 
 ### Ingest
 

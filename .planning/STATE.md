@@ -52,7 +52,7 @@ Decisions are logged in PROJECT.md Key Decisions table. Recent decisions affecti
 
 - **2026-05-26 PIVOT: local-first** (Bun + `bun:sqlite` + local media + local SQLite-backed queue). Reverts all-Cloudflare — IG 403s CF datacenter IPs for reels; reliable download needs residential IP + browser cookies (a local host has both).
 - **2026-05-26: reel download via `yt-dlp --cookies-from-browser` validated** on local host (53.9 MiB reel, 785 Chrome cookies). `scripts/fetch-reel.ts` is the seed of the local download step.
-- **2026-05-26: capture topology resolved** — Telegram **dropped for v1**; capture = manual-drop folder (load-bearing) + URL intake + **opt-in saved-collection sync** (CAP-05; off by default, cookie-based, small batches w/ delays, per ban-risk caution).
+- **2026-05-26: capture topology resolved** — Telegram **dropped for v1**; capture = manual-drop folder (load-bearing) + URL intake + **opt-in saved-collection sync** (CAP-05; off by default, cookie-based, small batches with **randomized delays/jitter**, per ban-risk caution).
 - Portable: Groq Whisper transcription + Claude vision/analysis logic survive the pivot (runtime changes only).
 - Init: Full intelligence pipeline (references, claims, code, web-enrichment) is in v1 scope.
 

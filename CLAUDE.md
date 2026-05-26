@@ -7,7 +7,7 @@
   - Run scripts with `bun run <script>`.
   - Run files with `bun <file>` and one-off binaries with `bunx <pkg>` (instead of `node` / `npx`).
   - Use `bun test` for the test runner.
-  - **Exception:** Cloudflare Workers run on `workerd`, not Bun. Edge code is built/run/deployed with Wrangler (invoked via `bunx wrangler ...`). Bun remains the package manager, test runner, local script runner, and the base image for the ingest Container.
+  - **Note:** `yt-dlp` and `ffmpeg` are external **system binaries** invoked as subprocesses (not Bun packages); everything else — app, ingest worker, web UI, tests — runs on Bun.
 
 <!-- GSD:project-start source:PROJECT.md -->
 
@@ -15,19 +15,20 @@
 
 **Reel Atlas**
 
-A self-hosted, single-user research system for Instagram reels about code, design, art, music, and LLMs. You forward a reel to a Telegram bot; the system downloads it, transcribes the audio, understands the visuals, extracts references, analyzes and challenges the claims, fills gaps with web search, and records an enriched, cross-referenced finding in a knowledge base you can browse as a visual catalog — so prior art is never lost and can be built upon.
+A self-hosted, single-user research system for Instagram reels about code, design, art, music, and LLMs. You capture a reel locally — drop a video file, hand it a link, or (opt-in) sync a saved collection; the system downloads it, transcribes the audio, understands the visuals, extracts references, analyzes and challenges the claims, fills gaps with web search, and records an enriched, cross-referenced finding in a knowledge base you can browse as a visual catalog — so prior art is never lost and can be built upon.
 
-**Core Value:** Forward a reel and never lose it: it becomes a permanently enriched, cross-referenced, browsable entry I can build generative design/art/code projects on top of.
+**Core Value:** Capture a reel and never lose it: it becomes a permanently enriched, cross-referenced, browsable entry I can build generative design/art/code projects on top of.
 
 ### Constraints
 
 - **Tech stack**: Bun + TypeScript — per project convention (see CLAUDE.md).
-- **Capture**: Telegram bot (grammY) — lowest-friction entry point for ADHD capture, always available from phone.
-- **Ingestion**: yt-dlp + ffmpeg system binaries; hybrid with manual file fallback — resilience against ToS/breakage.
+- **Architecture**: Local-first — single always-on host (Bun + `bun:sqlite` + local media + a local SQLite-backed job queue). *(Not Cloudflare: Instagram 403s datacenter IPs; reliable reel download needs a residential IP + browser cookies, which a local host has.)*
+- **Capture**: Local intake — watched drop-folder (load-bearing) + URL intake (CLI/endpoint) + **opt-in** saved-collection sync (off by default, cookie-based, small batches with **randomized delays** to avoid pattern-matching). Telegram dropped for v1.
+- **Ingestion**: `yt-dlp --cookies-from-browser` + ffmpeg system binaries; manual file fallback — resilience against ToS/breakage. *(Download mechanism validated 2026-05-26.)*
 - **Storage**: SQLite (bun:sqlite) + local media files on disk — simple, private, relational with cross-references.
 - **Transcription**: hosted Whisper API (e.g. Groq/OpenAI whisper-large-v3) — avoids heavy local GPU on a small always-on host; keep pluggable.
 - **AI**: Claude API for vision + analysis/enrichment, with prompt caching — quality multimodal understanding and reasoning.
-- **Deployment**: single small always-on host (cheap VPS or home server) running bot + worker + web.
+- **Deployment**: single small always-on host (cheap VPS or home server) running ingest worker + web.
 - **Legal/privacy**: best-effort download, personal/private use only; manual file fallback for compliance.
 - **Cost**: per-reel transcription + LLM cost; models must be configurable to control spend.
 
