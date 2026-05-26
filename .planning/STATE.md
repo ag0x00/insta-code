@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: executing
-last_updated: "2026-05-26T03:05:26.387Z"
-last_activity: 2026-05-26 -- Phase 01 execution started
+status: completed
+last_updated: "2026-05-26T04:38:16.348Z"
+last_activity: 2026-05-26 -- Verified Phase 01 (goal-backward, 15/15); added `bun run findings` viewer; phase complete
 progress:
   total_phases: 5
   completed_phases: 1
@@ -20,22 +20,22 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-25)
 
 **Core value:** Forward a reel and never lose it — it becomes a permanently enriched, cross-referenced, browsable entry I can build projects on.
-**Current focus:** Phase 01 — capture-ingest-spine
+**Current focus:** Phase 02 — Understand (Transcribe + See) [next]
 
 ## Current Position
 
-Phase: 01 (capture-ingest-spine) — CODE COMPLETE, live-verify pending
-Plan: 3 of 3 built
-Status: Phase 01 code complete — typecheck clean + 50/50 tests green in-sandbox (stubbed yt-dlp/ffmpeg/gallery-dl). All 3 plans end in a human-action checkpoint requiring the user's local host (ffmpeg + IG cookies; sandbox 403s Instagram). Awaiting user-host live verification.
-Last activity: 2026-05-26 -- Executed Phase 01 (3 plans): Bun app + bun:sqlite schema/queue + worker (yt-dlp/ffmpeg) + CLI/HTTP/drop-folder intake + opt-in jittered saved-sync; dead Cloudflare artifacts removed
+Phase: 01 (capture-ingest-spine) — ✓ COMPLETE & VERIFIED
+Plan: 3 of 3 built, verified
+Status: phase-complete
+Last activity: 2026-05-26 -- Verified Phase 01 (goal-backward, 15/15); added `bun run findings` viewer; phase complete
 
-Progress: [████░░░░░░] Phase 1 code-complete (3/3 plans), live verification pending on user host
+Progress: [██████░░░░] Phase 1 complete (3/3 plans, verified); Phase 2 next
 
-## Outstanding: User-Host Live Verification (Phase 1 gate)
-Run on your local machine (residential IP + Chrome IG cookies + ffmpeg). See the consolidated checklist in the session / each plan's SUMMARY:
-1. **01-01 spine:** `apt/brew install ffmpeg`; log into IG in Chrome then QUIT it; `bun install && bun run migrate`; `bun run worker` (one terminal) + `bun run submit "<reel-url>"` (another) → expect media/<id>.mp4 + .m4a + keyframes + a findings row.
-2. **01-02 drop-folder:** with `bun run worker` running, drop a video into `DROP_DIR` (default ./drop) → expect a source_type='file' findings row; re-drop → deduped.
-3. **01-03 sync (optional):** only if wanted — set SYNC_ENABLED=true + SYNC_COLLECTION_URL in .env, `bun run sync` → enumerates + enqueues; re-run dedups. Otherwise leave SYNC_ENABLED=false (safe no-op).
+## Phase 1 verification: PASSED
+
+- Live UAT (user host): URL spine ✓, drop-folder + dedup ✓, findings viewer ✓, unified service banner ✓.
+- In-sandbox: typecheck clean, 50/50 tests, no Cloudflare/Telegram regressions, HTTP bound 127.0.0.1 only, Bun.spawn arrays only.
+- Deferred/optional: CAP-05 live gallery-dl sync (off by default); OPS-04 "bot notification" satisfied via logs + submission.status + findings CLI (Telegram deferred).
 
 ## Performance Metrics
 

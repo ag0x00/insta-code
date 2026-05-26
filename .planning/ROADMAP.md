@@ -8,7 +8,7 @@ Build a self-hosted reel research system as a thin end-to-end spine first, then 
 
 ## Phases
 
-- [ ] **Phase 1: Capture & Ingest Spine** - Forward a reel to the bot → media downloaded, audio/keyframes/metadata extracted, finding stored
+- [x] **Phase 1: Capture & Ingest Spine** - Capture a reel (drop a file / hand a link / opt-in sync) → media downloaded, audio/keyframes/metadata extracted, finding stored — ✓ verified 2026-05-26
 - [ ] **Phase 2: Understand (Transcribe + See)** - Each captured reel gets an automatic transcript and visual summary
 - [ ] **Phase 3: Analyze & Enrich** - Findings gain references, challenged claims, extracted code, and web-enriched context
 - [ ] **Phase 4: Knowledge System** - Findings are tagged, categorized, cross-linked, searchable; code becomes a browsable library
@@ -108,7 +108,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Capture & Ingest Spine | 3/3 | Code complete (50 tests green); ⚠ live verify pending on user host | - |
+| 1. Capture & Ingest Spine | 3/3 | ✓ Complete (verified — 15/15 must-haves; live UAT passed) | 2026-05-26 |
 | 2. Understand (Transcribe + See) | 3/3 | Logic portable; runtime re-platforms during Phase 1 | - |
 | 3. Analyze & Enrich | 0/TBD | Not started | - |
 | 4. Knowledge System | 0/TBD | Not started | - |
