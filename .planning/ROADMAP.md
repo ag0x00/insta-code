@@ -1,0 +1,115 @@
+# Roadmap: Reel Atlas
+
+## Overview
+
+Build a self-hosted reel research system as a thin end-to-end spine first, then deepen the intelligence. Phase 1 stands up **local** capture (manual-drop folder + URL intake + opt-in saved-collection sync) and ingestion (yt-dlp-with-cookies download + audio/keyframe/metadata extraction) so a captured reel produces a stored finding. Phase 2 adds understanding (transcription + visual analysis). Phase 3 adds the analysis/enrichment layer (references, claims, code, web search). Phase 4 turns findings into a real knowledge system (tags, categories, cross-references, code library, search). Phase 5 delivers the visual, animated catalog browser. Each phase leaves a usable system.
+
+> **Architecture pivot (2026-05-26):** the system is now **local-first** (Bun + SQLite + local media + a local SQLite-backed job queue) instead of all-Cloudflare. Reason: Instagram 403s Cloudflare datacenter IPs for reel media, and reliable download needs a residential IP + the user's browser cookies — both of which a local host provides. Validated: `yt-dlp --cookies-from-browser chrome` pulled a 53.9 MiB reel locally. The Phase 1 & 2 code was built against the (now-reverted) Cloudflare stack and **needs re-platforming to local** — re-plan via `/gsd-plan-phase 1`. The Phase 2 *enrichment logic* (Groq transcription, Claude vision, pure parsers) is runtime-portable and largely survives; only its runtime (Workers/Queues/D1/R2 → Bun/local-queue/SQLite/disk) changes.
+
+## Phases
+
+- [x] **Phase 1: Capture & Ingest Spine** - Capture a reel (drop a file / hand a link / opt-in sync) → media downloaded, audio/keyframes/metadata extracted, finding stored — ✓ verified 2026-05-26
+- [ ] **Phase 2: Understand (Transcribe + See)** - Each captured reel gets an automatic transcript and visual summary
+- [ ] **Phase 3: Analyze & Enrich** - Findings gain references, challenged claims, extracted code, and web-enriched context
+- [ ] **Phase 4: Knowledge System** - Findings are tagged, categorized, cross-linked, searchable; code becomes a browsable library
+- [ ] **Phase 5: Visual Catalog Browser** - Browse the whole catalog visually with filtering, search, detail views, and animation
+
+## Phase Details
+
+### Phase 1: Capture & Ingest Spine
+**Goal**: Stand up the always-on **local** service so capturing a reel link (via CLI / local endpoint), dropping a video file, or (opt-in) syncing a saved Instagram collection results in downloaded media (yt-dlp with browser cookies), extracted audio + keyframes + metadata, and a stored finding record — processed via a local durable (SQLite-backed) job queue.
+**Depends on**: Nothing (first phase)
+**Mode:** mvp
+**Requirements**: CAP-01, CAP-02, CAP-03, CAP-04, CAP-05, ING-01, ING-02, ING-03, ING-04, ING-05, KB-01, OPS-01, OPS-02, OPS-03, OPS-04
+**Success Criteria** (what must be TRUE):
+  1. User can hand a reel link to the local system (and/or drop a video file) and get a completion/failure result
+  2. When link download fails, a dropped video file lets processing continue
+  3. A stored finding exists with the media, extracted audio, keyframes, and any caption/metadata
+  4. Duplicate submissions of the same reel are skipped
+  5. The intake, worker, and queue run as an always-on local service driven by env config, with failures logged and surfaced
+**Plans**: 3 plans (local-first re-plan, 2026-05-26)
+
+Plans:
+- [x] 01-01-PLAN.md — Re-platform to a Bun app + `bun:sqlite` schema/queue + worker (yt-dlp download, ffmpeg audio/keyframes, metadata, findings) + CLI submit: the thin URL→queue→worker→Finding spine [wave 1] — code complete, 50-test suite green; ⚠ live IG+ffmpeg run pending on user host
+- [x] 01-02-PLAN.md — Intake surface: localhost-only HTTP endpoint + drop-folder watcher + content-hash/shortcode dedup + unified always-on service entry [wave 2] — code complete; ⚠ live drop-folder run pending on user host
+- [x] 01-03-PLAN.md — Opt-in (off-by-default) saved-collection sync via gallery-dl with jittered/capped pacing, feeding the shared deduped queue path [wave 2] — code complete; ⚠ optional live sync pending on user host
+
+_Re-planned local-first via `/gsd-plan-phase 1` after the 2026-05-26 Cloudflare→local pivot; executed 2026-05-26. The prior all-Cloudflare/Telegram plans were reverted (archived under `_archive-cloudflare/`); dead Cloudflare artifacts (wrangler.toml, container/, D1 migrations) removed. `src/shared/instagram.ts` + `src/enrich/parse.ts` reused verbatim. **Code complete: typecheck clean + 50/50 tests green in-sandbox (stubbed yt-dlp/ffmpeg/gallery-dl).** Each plan ends in a `human-action` checkpoint — live IG download + ffmpeg + drop-folder + (optional) gallery-dl sync verify on the user's host (sandbox 403s Instagram + lacks ffmpeg). Phase is **code-complete, awaiting user-host live verification.**_
+
+### Phase 2: Understand (Transcribe + See)
+**Goal**: Automatically enrich every captured reel with a timestamped transcript (and detected language) and a visual analysis (scene summary + on-screen text) derived from keyframes, stored on the finding.
+**Depends on**: Phase 1
+**Mode:** mvp
+**Requirements**: TRX-01, TRX-02, TRX-03, VIS-01, VIS-02, VIS-03
+**Success Criteria** (what must be TRUE):
+  1. Each processed reel has a timestamped transcript with detected language
+  2. Each processed reel has a visual summary and extracted on-screen text
+  3. Transcript and visual analysis are stored on the finding and viewable
+**Plans**: 3 plans (local-first re-plan, 2026-05-26)
+
+Plans:
+- [ ] 02-01-PLAN.md — Ingest→enrich handoff end-to-end: extend the SQLite queue with a job `kind` ('ingest'|'enrich'), enrich orchestrator (`enrichFinding`) running transcribe+vision via Promise.allSettled with path confinement + status writes, proven with an ENRICH_FAKE seam [wave 1]
+- [ ] 02-02-PLAN.md — Real transcription: Groq Whisper `verbose_json` over the local audio file (recovered from 607fc16, re-platformed off R2/D1), reusing parseGroqVerboseJson; stubbed-HTTP test [wave 2]
+- [ ] 02-03-PLAN.md — Real vision: Claude (default `claude-haiku-4-5`, prompt caching) over capped local keyframes (recovered from 607fc16), reusing parseClaudeVision; frame+token cost caps; stubbed-HTTP test [wave 2]
+
+_Re-planned local-first via `/gsd-plan-phase 2` after the Cloudflare→local pivot; the prior all-Cloudflare plans were reverted (archived under `_archive-cloudflare/`). The enrich pass extends the existing Phase 1 SQLite queue/worker (D-01, smallest sound change) — no parallel queue, no new migration beyond a guarded `jobs.kind` column (enrichment columns already exist on `findings`). `src/enrich/parse.ts` parsers reused verbatim; `transcribe.ts`/`vision.ts` recovered from git `607fc16` and re-platformed (R2→Bun.file, D1→bun:sqlite). Vision defaults to Haiku 4.5 with prompt caching. In-sandbox tests stub the Groq/Claude HTTP; live transcription/vision (GROQ_API_KEY + ANTHROPIC_API_KEY against real findings) verifies on the user's host._
+
+### Phase 3: Analyze & Enrich
+**Goal**: Add the intelligence layer: extract references, identify and critically challenge claims (surfacing assumptions), extract reusable code/pseudo-code, and run web searches to fill gaps and enrich context with citations.
+**Depends on**: Phase 2
+**Mode:** mvp
+**Requirements**: ANL-01, ANL-02, ANL-03, ANL-04, ANL-05
+**Success Criteria** (what must be TRUE):
+  1. Each finding lists extracted references (artists, tools, papers, techniques, links)
+  2. Each finding surfaces key claims with hidden assumptions and critical counterpoints
+  3. Reusable code or pseudo-code is extracted where techniques are shown
+  4. Findings are enriched with web-search context and cited sources
+**Plans**: TBD
+
+Plans:
+- [ ] 03-01: TBD (set during `/gsd-plan-phase 3`)
+
+### Phase 4: Knowledge System
+**Goal**: Turn the pile of findings into a connected knowledge base: auto-tagging and categorization, cross-references between related findings, a code/pseudo-code library cross-linked to findings, and full-text search.
+**Depends on**: Phase 3
+**Mode:** mvp
+**Requirements**: KB-02, KB-03, KB-04, KB-05
+**Success Criteria** (what must be TRUE):
+  1. Findings are auto-tagged and categorized (code / design / art / music / LLM + topical tags)
+  2. Related findings are cross-referenced
+  3. Extracted code is browsable as a library cross-linked back to findings
+  4. User can search across findings and get relevant results
+**Plans**: TBD
+
+Plans:
+- [ ] 04-01: TBD (set during `/gsd-plan-phase 4`)
+
+### Phase 5: Visual Catalog Browser
+**Goal**: Deliver the web app for browsing the catalog visually as **a wall of generated examples / visualizations / animations** (the decomposed outputs — NOT reel thumbnails), with filter by category/tag, search, a rich detail view, and an aesthetically pleasing, animated experience.
+**Depends on**: Phase 4
+**Mode:** mvp
+**Requirements**: BRW-01, BRW-02, BRW-03, BRW-04
+**Success Criteria** (what must be TRUE):
+  1. User can open the web app and see a visual wall of findings rendered as generated artifacts/visualizations (not reel thumbnails)
+  2. User can filter/browse by category and tag and search
+  3. User can open a finding detail view with transcript, visual summary, references, claims, code, and links
+  4. Browsing feels aesthetically pleasing and animated
+
+> **Scope note (user clarification, 2026-05-26):** the catalog is a wall of *cool examples/visualizations/animations* derived from reels, not the reels themselves. This implies findings need a renderable/"buildable" artifact (e.g. runnable snippet or visualization spec). Whether those artifacts are auto-generated per finding or curated is an **open fork to settle in a Phase 5 discussion**, and may add a phase between Knowledge System and Browse (relates to v2 `GEN-01`).
+**Plans**: TBD
+
+Plans:
+- [ ] 05-01: TBD (set during `/gsd-plan-phase 5`)
+
+## Progress
+
+**Execution Order:**
+Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
+
+| Phase | Plans Complete | Status | Completed |
+|-------|----------------|--------|-----------|
+| 1. Capture & Ingest Spine | 3/3 | ✓ Complete (verified — 15/15 must-haves; live UAT passed) | 2026-05-26 |
+| 2. Understand (Transcribe + See) | 0/3 | Planned (local-first re-plan); ready to execute | - |
+| 3. Analyze & Enrich | 0/TBD | Not started | - |
+| 4. Knowledge System | 0/TBD | Not started | - |
+| 5. Visual Catalog Browser | 0/TBD | Not started | - |
