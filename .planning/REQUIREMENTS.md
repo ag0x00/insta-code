@@ -7,15 +7,15 @@
 
 ### Capture
 
-- [ ] **CAP-01**: User can forward/share an Instagram reel link to a Telegram bot and have it accepted for processing
-- [ ] **CAP-02**: User can send a video file to the bot as a fallback when link download fails
-- [ ] **CAP-03**: Bot acknowledges receipt and notifies the user when processing completes or fails
+- [ ] **CAP-01**: User can hand an Instagram reel link to the local system (CLI / local endpoint, and optionally by forwarding to a **local Telegram long-polling bot**) and have it accepted for processing
+- [ ] **CAP-02**: User can drop a video file into a watched local folder (load-bearing path, also the fallback when link download fails)
+- [ ] **CAP-03**: System records receipt and surfaces when processing completes or fails (local notification + log; Telegram reply if the optional bot is enabled)
 - [ ] **CAP-04**: Duplicate submissions of the same reel are detected and not re-processed
 
 ### Ingest
 
-- [ ] **ING-01**: System downloads reel media from the link via yt-dlp when possible
-- [ ] **ING-02**: System falls back to the user-supplied video file when link download fails
+- [ ] **ING-01**: System downloads reel media from the link via `yt-dlp --cookies-from-browser` on the local host (residential IP + the user's browser session) — *mechanism validated 2026-05-26*
+- [ ] **ING-02**: System falls back to the user-supplied dropped video file when link download fails
 - [ ] **ING-03**: System extracts the audio track from the media
 - [ ] **ING-04**: System extracts representative keyframes from the video
 - [ ] **ING-05**: System captures available metadata (author, caption text, post date) when present
@@ -57,9 +57,9 @@
 
 ### Ops
 
-- [ ] **OPS-01**: System runs as an always-on self-hosted service (bot + worker + web)
-- [ ] **OPS-02**: Long-running processing happens via a durable job queue with retries
-- [ ] **OPS-03**: Secrets/config (API keys, bot token) are managed via environment configuration
+- [ ] **OPS-01**: System runs as an always-on **local** service (intake + ingest worker + web UI) on a single host
+- [ ] **OPS-02**: Long-running processing happens via a **local durable (SQLite-backed) job queue** with retries
+- [ ] **OPS-03**: Secrets/config (API keys, optional bot token, cookie browser) are managed via environment configuration
 - [ ] **OPS-04**: Processing failures are logged and surfaced (bot notification + logs)
 
 ## v2 Requirements
@@ -132,4 +132,4 @@
 
 ---
 *Requirements defined: 2026-05-25*
-*Last updated: 2026-05-25 after initial definition*
+*Last updated: 2026-05-26 — reframed CAP/ING/OPS for the local-first pivot (local intake + optional local Telegram bot, yt-dlp+cookies download validated, local SQLite-backed queue). Requirement IDs unchanged; traceability intact.*

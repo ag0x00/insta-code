@@ -18,8 +18,8 @@ Forward a reel and never lose it: it becomes a permanently enriched, cross-refer
 
 ### Active
 
-- [ ] Capture a reel by forwarding a link (or a video file fallback) to a Telegram bot
-- [ ] Download media (hybrid: yt-dlp from link, manual file fallback), extract audio + keyframes + caption/metadata
+- [ ] Capture a reel by dropping a video file or handing a link to the local system (optionally by forwarding to a local Telegram bot)
+- [ ] Download media (yt-dlp with browser cookies on the local host, manual file fallback), extract audio + keyframes + caption/metadata
 - [ ] Transcribe audio with timestamps and detect language
 - [ ] Understand the visuals (scene summary + on-screen text) from keyframes
 - [ ] Extract references (artists, tools, papers, techniques, links)
@@ -46,33 +46,35 @@ Forward a reel and never lose it: it becomes a permanently enriched, cross-refer
 - Domain of the reels: creative-technical — generative design/art, music, code experiments, and LLM techniques. Findings should preserve technique-level detail (code/pseudo-code) and aesthetic/emotional references.
 - Example reels provided by the user (public reel URLs) span this creative-technical space.
 - Instagram has no official API for arbitrary reel media/audio; programmatic downloading is a ToS gray area and downloader tooling breaks periodically — hence the hybrid ingestion strategy with a manual file fallback.
+- **Architecture pivot (2026-05-26):** reverted from all-Cloudflare to **local-first**. Two findings drove this: (1) Instagram returns `403` to Cloudflare datacenter egress IPs for reel media (verified — anonymous, real browser-UA, and the oembed endpoint all 403), so the load-bearing download cannot run on serverless edge; (2) downloading reliably needs a **residential IP + the user's logged-in browser cookies**, which a local host provides. Validated the mechanism end-to-end: `yt-dlp --cookies-from-browser chrome <reel-url>` pulled a 53.9 MiB reel (785 cookies extracted) on the user's machine. A research PDF (Reddit synthesis) also flagged that all programmatic IG access is unofficial and **account bans are a real, current risk** — pushing manual-drop to be load-bearing and saved-collection auto-sync to opt-in/deferred.
 - **UI intent (clarified 2026-05-26):** the browsable catalog is a *wall of cool examples, visualizations, and animations* — the decomposed/generated outputs — **not** a grid of reel thumbnails. Reels are raw sources for ingestion + decomposition. This pulls the generative angle toward the core experience and shapes Phase 5 (see ROADMAP scope note + REQUIREMENTS ART-01).
 
 ## Constraints
 
-- **Platform**: All-Cloudflare serverless — Workers (Telegram webhook + queue consumers), Cloudflare Queues (job pipeline), D1 (knowledge DB), R2 (media storage), Containers (yt-dlp/ffmpeg). No always-on host to maintain.
-- **Edge runtime**: Workers run on `workerd` (V8 isolates) via Wrangler — **not** Bun. Bun stays the local toolchain (package manager, scripts) and the base of the Container image; TypeScript throughout.
-- **Capture**: Telegram bot (grammY) running on a Worker via webhook — lowest-friction, always-available capture.
-- **Ingestion**: Cloudflare Container image bundling yt-dlp + ffmpeg; hybrid (yt-dlp from link, manual file fallback). **Caveat:** Cloudflare egress IPs are more prone to Instagram blocking/ratelimiting (and reels often need login cookies), so the manual file fallback is load-bearing, not just a backup.
-- **Transcription**: Groq Whisper API (whisper-large-v3) via `fetch` — fast/cheap; kept pluggable.
-- **AI**: Claude API for vision + analysis/enrichment, with prompt caching.
-- **Storage**: D1 for findings/metadata/tags/cross-references; R2 for media/audio/keyframes.
-- **Legal/privacy**: best-effort download, personal/private use only; manual file fallback for compliance.
-- **Cost**: per-reel Groq + Claude cost plus Cloudflare usage (Containers billed on active CPU); models must be configurable to control spend.
+- **Platform**: Single **local always-on host** (your machine / home server / small VPS) running the whole system — capture intake, ingest worker, and web UI — on **Bun + TypeScript**. This realigns with the original CLAUDE.md constraints (SQLite + local media on one small host); the all-Cloudflare detour is **reverted** (see Key Decisions) because Instagram 403s Cloudflare datacenter egress IPs, so the load-bearing reel download can't run there.
+- **Capture**: Multiple low-friction paths feeding one **local intake queue**: (1) a watched **manual-drop folder** for video files (zero account-ban risk), (2) **local URL intake** that fetches a reel via yt-dlp, and — optionally — (3) a **local Telegram long-polling bot** (grammY, no public webhook) to forward reels from the phone. Saved-collection auto-sync is opt-in/deferred (ban risk).
+- **Ingestion**: `yt-dlp` + `ffmpeg` as local system binaries. Reel download uses `yt-dlp --cookies-from-browser <browser>` — **validated 2026-05-26**: pulled a 53.9 MiB reel using 785 Chrome cookies from a residential IP. Manual file drop remains the load-bearing fallback for ToS/breakage.
+- **Transcription**: Groq Whisper API (whisper-large-v3) via `fetch` — fast/cheap; kept pluggable. (Unchanged — runtime-portable.)
+- **AI**: Claude API for vision + analysis/enrichment, with prompt caching. (Unchanged — runtime-portable.)
+- **Storage**: **SQLite (`bun:sqlite`)** for findings/metadata/tags/cross-references; media/audio/keyframes as **local files on disk**. Replaces D1/R2.
+- **Job pipeline**: A **local durable job queue (SQLite-backed)** with retries drives async processing. Replaces Cloudflare Queues.
+- **Legal/privacy**: best-effort download, personal/private use only; runs on your own machine with your own browser session cookies; manual file fallback for compliance.
+- **Cost**: per-reel Groq + Claude cost only — **no cloud infra bill**. Models must be configurable to control spend.
 
 ## Key Decisions
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| All-Cloudflare serverless (Workers + Queues + D1 + R2 + Containers) | No always-on host to babysit; Containers (GA Apr 2026) run yt-dlp/ffmpeg; native Queues/D1/R2 cover the pipeline | — Pending |
-| ~~Self-hosted always-on host~~ | Superseded by all-Cloudflare on 2026-05-25 | ⚠️ Revisit (replaced) |
-| Edge code on workerd, Bun for local tooling + Container image | Workers don't run Bun; keeps Bun preference where it applies | — Pending |
-| Hybrid ingestion (yt-dlp + manual file fallback) | Low-friction when it works, resilient when it doesn't; fallback load-bearing on CF IPs | — Pending |
-| Telegram bot (grammY on a Worker) as capture entry point | Near-zero friction, always-available, great for ADHD capture | — Pending |
-| Cloudflare Queues for the job pipeline | Native durable queue with retries; replaces a SQLite-backed queue | — Pending |
-| D1 knowledge store + R2 media | Serverless SQLite (relational + cross-refs) + cheap object storage, no egress fees | — Pending |
-| Claude API for vision + analysis | Strong multimodal understanding and critical reasoning | — Pending |
-| Groq Whisper for transcription | Fast/cheap hosted Whisper via fetch; keep pluggable | — Pending |
+| **Local-first: single always-on host** (Bun + SQLite + local media + local job queue) | Realigns with original CLAUDE.md constraints; residential IP + browser cookies are required to fetch reels; no per-reel infra cost; full privacy | ✅ Adopted 2026-05-26 |
+| ~~All-Cloudflare serverless (Workers + Queues + D1 + R2 + Containers)~~ | **Reverted 2026-05-26**: Instagram 403s Cloudflare datacenter egress IPs for reel media (verified — anonymous, browser-UA, and oembed all 403), so the load-bearing download can't run there | ⚠️ Reverted → local-first |
+| Reel download via `yt-dlp --cookies-from-browser` on the local host | Uses residential IP + your logged-in session — the only reliable path past IG's anonymous/datacenter blocking | ✅ Validated 2026-05-26 (53.9 MiB reel, 785 Chrome cookies) |
+| Manual-drop folder as load-bearing capture + fallback | Zero account-ban risk; works regardless of IG breakage; intake is mechanism-agnostic | ✅ Adopted 2026-05-26 |
+| Telegram capture via **local long-polling** grammY bot (optional) | Keeps near-zero-friction phone capture without a public webhook/Worker; runs on the local host | — Pending (optional path) |
+| Saved-collection auto-sync | Convenient, but carries real account-ban risk (per research PDF) — build opt-in, off by default, rate-limited | ⏸️ Deferred / opt-in |
+| SQLite (`bun:sqlite`) + local media files | Relational store w/ cross-refs on one host; replaces D1/R2 | ✅ Adopted 2026-05-26 |
+| Local SQLite-backed job queue with retries | Durable async pipeline without Cloudflare Queues | ✅ Adopted 2026-05-26 |
+| Claude API for vision + analysis (prompt caching) | Strong multimodal understanding; runtime-portable (kept from prior plan) | — Pending |
+| Groq Whisper for transcription | Fast/cheap hosted Whisper via fetch; runtime-portable (kept from prior plan) | — Pending |
 | Full intelligence pipeline in v1 | User explicitly wants references, claims, code, and web-enrichment from the start | — Pending |
 | Catalog = wall of generated artifacts, not reel thumbnails | User's UI intent: surface decomposed examples/visualizations/animations to build on | — Pending |
 
@@ -94,4 +96,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-26 after Phase 2 build + UI-vision clarification (catalog = wall of generated artifacts)*
+*Last updated: 2026-05-26 — architecture pivot to local-first (Bun + SQLite + local media + local queue); yt-dlp+browser-cookies capture validated; all-Cloudflare reverted. Phase 1/2 code needs re-platforming (track via /gsd-plan-phase).*
