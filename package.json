@@ -5,7 +5,7 @@
   "type": "module",
   "description": "Self-hosted, single-user research catalog for Instagram reels (capture & ingest spine).",
   "scripts": {
-    "worker": "bun run src/worker/loop.ts",
+    "worker": "bun run src/index.ts",
     "submit": "bun run src/intake/cli.ts",
     "migrate": "bun run src/db/migrate.ts",
     "typecheck": "tsc -p tsconfig.json",

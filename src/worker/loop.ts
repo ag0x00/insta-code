@@ -46,7 +46,7 @@ function log(level: "info" | "warn" | "error", msg: string, meta?: Record<string
   }
 }
 
-async function startup(): Promise<void> {
+export async function startup(): Promise<void> {
   log("info", "worker starting", { config: safeConfigSummary(config) });
 
   // Run migration to ensure schema is up to date
@@ -75,7 +75,7 @@ async function startup(): Promise<void> {
   log("info", "orphaned job recovery complete");
 }
 
-async function runWorkerLoop(): Promise<never> {
+export async function runWorkerLoop(): Promise<never> {
   while (true) {
     const job = claimNext();
 
