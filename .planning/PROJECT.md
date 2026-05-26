@@ -4,7 +4,7 @@
 
 ## What This Is
 
-A self-hosted, single-user research system for Instagram reels about code, design, art, music, and LLMs. You forward a reel to a Telegram bot; the system downloads it, transcribes the audio, understands the visuals, extracts references, analyzes and challenges the claims, fills gaps with web search, and records an enriched, cross-referenced finding in a knowledge base you can browse as a visual catalog — so prior art is never lost and can be built upon.
+A self-hosted, single-user research system for Instagram reels about code, design, art, music, and LLMs. You capture a reel locally — drop a video file, hand it a link, or (opt-in) sync a saved collection; the system downloads it, transcribes the audio, understands the visuals, extracts references, analyzes and challenges the claims, fills gaps with web search, and records an enriched, cross-referenced finding in a knowledge base you can browse as a visual catalog — so prior art is never lost and can be built upon.
 
 ## Core Value
 
@@ -18,7 +18,7 @@ Forward a reel and never lose it: it becomes a permanently enriched, cross-refer
 
 ### Active
 
-- [ ] Capture a reel by dropping a video file or handing a link to the local system (optionally by forwarding to a local Telegram bot)
+- [ ] Capture a reel by dropping a video file, handing a link to the local system, or (opt-in) syncing a saved Instagram collection
 - [ ] Download media (yt-dlp with browser cookies on the local host, manual file fallback), extract audio + keyframes + caption/metadata
 - [ ] Transcribe audio with timestamps and detect language
 - [ ] Understand the visuals (scene summary + on-screen text) from keyframes
@@ -34,7 +34,7 @@ Forward a reel and never lose it: it becomes a permanently enriched, cross-refer
 ### Out of Scope
 
 - Multi-user / accounts — this is a personal single-user tool; auth adds complexity with no v1 value.
-- Native mobile app — Telegram capture + responsive web browsing are enough for v1.
+- Native mobile app — local drop-folder/URL capture + responsive web browsing are enough for v1.
 - Other platforms (TikTok, YouTube, X) — Instagram-first; the ingestion layer should stay pluggable for later.
 - Public sharing / publishing the catalog — personal knowledge base, not a product.
 - Real-time / live transcription — processing is batch/async per submitted reel.
@@ -52,7 +52,7 @@ Forward a reel and never lose it: it becomes a permanently enriched, cross-refer
 ## Constraints
 
 - **Platform**: Single **local always-on host** (your machine / home server / small VPS) running the whole system — capture intake, ingest worker, and web UI — on **Bun + TypeScript**. This realigns with the original CLAUDE.md constraints (SQLite + local media on one small host); the all-Cloudflare detour is **reverted** (see Key Decisions) because Instagram 403s Cloudflare datacenter egress IPs, so the load-bearing reel download can't run there.
-- **Capture**: Multiple low-friction paths feeding one **local intake queue**: (1) a watched **manual-drop folder** for video files (zero account-ban risk), (2) **local URL intake** that fetches a reel via yt-dlp, and — optionally — (3) a **local Telegram long-polling bot** (grammY, no public webhook) to forward reels from the phone. Saved-collection auto-sync is opt-in/deferred (ban risk).
+- **Capture**: Three paths feeding one **local intake queue**: (1) a watched **manual-drop folder** for video files (zero account-ban risk), (2) **local URL intake** (CLI / local endpoint) that fetches a reel via yt-dlp, and (3) **opt-in saved-collection sync** — off by default, cookie-based, small batches with delays (you enable it knowingly given the ban risk). Telegram is **dropped for v1**.
 - **Ingestion**: `yt-dlp` + `ffmpeg` as local system binaries. Reel download uses `yt-dlp --cookies-from-browser <browser>` — **validated 2026-05-26**: pulled a 53.9 MiB reel using 785 Chrome cookies from a residential IP. Manual file drop remains the load-bearing fallback for ToS/breakage.
 - **Transcription**: Groq Whisper API (whisper-large-v3) via `fetch` — fast/cheap; kept pluggable. (Unchanged — runtime-portable.)
 - **AI**: Claude API for vision + analysis/enrichment, with prompt caching. (Unchanged — runtime-portable.)
@@ -69,8 +69,8 @@ Forward a reel and never lose it: it becomes a permanently enriched, cross-refer
 | ~~All-Cloudflare serverless (Workers + Queues + D1 + R2 + Containers)~~ | **Reverted 2026-05-26**: Instagram 403s Cloudflare datacenter egress IPs for reel media (verified — anonymous, browser-UA, and oembed all 403), so the load-bearing download can't run there | ⚠️ Reverted → local-first |
 | Reel download via `yt-dlp --cookies-from-browser` on the local host | Uses residential IP + your logged-in session — the only reliable path past IG's anonymous/datacenter blocking | ✅ Validated 2026-05-26 (53.9 MiB reel, 785 Chrome cookies) |
 | Manual-drop folder as load-bearing capture + fallback | Zero account-ban risk; works regardless of IG breakage; intake is mechanism-agnostic | ✅ Adopted 2026-05-26 |
-| Telegram capture via **local long-polling** grammY bot (optional) | Keeps near-zero-friction phone capture without a public webhook/Worker; runs on the local host | — Pending (optional path) |
-| Saved-collection auto-sync | Convenient, but carries real account-ban risk (per research PDF) — build opt-in, off by default, rate-limited | ⏸️ Deferred / opt-in |
+| ~~Telegram capture (local long-polling grammY bot)~~ | Dropped for v1 (2026-05-26) — capture is drop-folder + URL intake + opt-in sync; revisit in v2 if phone-forward friction is missed | ❌ Dropped (v1) |
+| Saved-collection sync — **opt-in, off by default**, cookie-based, small batches w/ delays | Convenient capture of the saved collection, but carries real account-ban risk (per research PDF); user opts in knowingly | ✅ Adopted 2026-05-26 (opt-in, Phase 1) |
 | SQLite (`bun:sqlite`) + local media files | Relational store w/ cross-refs on one host; replaces D1/R2 | ✅ Adopted 2026-05-26 |
 | Local SQLite-backed job queue with retries | Durable async pipeline without Cloudflare Queues | ✅ Adopted 2026-05-26 |
 | Claude API for vision + analysis (prompt caching) | Strong multimodal understanding; runtime-portable (kept from prior plan) | — Pending |

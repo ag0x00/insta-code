@@ -7,10 +7,11 @@
 
 ### Capture
 
-- [ ] **CAP-01**: User can hand an Instagram reel link to the local system (CLI / local endpoint, and optionally by forwarding to a **local Telegram long-polling bot**) and have it accepted for processing
+- [ ] **CAP-01**: User can hand an Instagram reel link to the local system (CLI / local endpoint) and have it accepted for processing
 - [ ] **CAP-02**: User can drop a video file into a watched local folder (load-bearing path, also the fallback when link download fails)
-- [ ] **CAP-03**: System records receipt and surfaces when processing completes or fails (local notification + log; Telegram reply if the optional bot is enabled)
+- [ ] **CAP-03**: System records receipt and surfaces when processing completes or fails (local notification + log)
 - [ ] **CAP-04**: Duplicate submissions of the same reel are detected and not re-processed
+- [ ] **CAP-05**: User can opt in to syncing a saved Instagram collection (off by default, cookie-based, small batches with delays); new items are enqueued like any other capture
 
 ### Ingest
 
@@ -81,7 +82,7 @@
 | Feature | Reason |
 |---------|--------|
 | Multi-user / accounts | Personal single-user tool; auth adds complexity with no v1 value |
-| Native mobile app | Telegram capture + responsive web are sufficient |
+| Native mobile app | Local drop-folder/URL capture + responsive web are sufficient |
 | Other platforms (TikTok/YouTube/X) | Instagram-first; keep ingestion pluggable for later (v2) |
 | Public sharing / publishing | Personal knowledge base, not a product |
 | Real-time / live transcription | Processing is batch/async per submitted reel |
@@ -95,6 +96,7 @@
 | CAP-02 | Phase 1 | Pending |
 | CAP-03 | Phase 1 | Pending |
 | CAP-04 | Phase 1 | Pending |
+| CAP-05 | Phase 1 | Pending |
 | ING-01 | Phase 1 | Pending |
 | ING-02 | Phase 1 | Pending |
 | ING-03 | Phase 1 | Pending |
@@ -126,10 +128,10 @@
 | BRW-04 | Phase 5 | Pending |
 
 **Coverage:**
-- v1 requirements: 33 total
-- Mapped to phases: 33
+- v1 requirements: 34 total
+- Mapped to phases: 34
 - Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-05-25*
-*Last updated: 2026-05-26 — reframed CAP/ING/OPS for the local-first pivot (local intake + optional local Telegram bot, yt-dlp+cookies download validated, local SQLite-backed queue). Requirement IDs unchanged; traceability intact.*
+*Last updated: 2026-05-26 — local-first pivot + capture topology resolved: Telegram dropped for v1; capture = drop-folder + URL intake + new **CAP-05** opt-in saved-collection sync (off by default). yt-dlp+cookies download validated; local SQLite-backed queue. v1 now 34 requirements; traceability intact.*

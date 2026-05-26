@@ -52,7 +52,7 @@ Decisions are logged in PROJECT.md Key Decisions table. Recent decisions affecti
 
 - **2026-05-26 PIVOT: local-first** (Bun + `bun:sqlite` + local media + local SQLite-backed queue). Reverts all-Cloudflare — IG 403s CF datacenter IPs for reels; reliable download needs residential IP + browser cookies (a local host has both).
 - **2026-05-26: reel download via `yt-dlp --cookies-from-browser` validated** on local host (53.9 MiB reel, 785 Chrome cookies). `scripts/fetch-reel.ts` is the seed of the local download step.
-- 2026-05-26: manual-drop folder is load-bearing capture; saved-collection auto-sync is opt-in/deferred (ban risk per research PDF); Telegram preserved as an optional **local long-polling** bot.
+- **2026-05-26: capture topology resolved** — Telegram **dropped for v1**; capture = manual-drop folder (load-bearing) + URL intake + **opt-in saved-collection sync** (CAP-05; off by default, cookie-based, small batches w/ delays, per ban-risk caution).
 - Portable: Groq Whisper transcription + Claude vision/analysis logic survive the pivot (runtime changes only).
 - Init: Full intelligence pipeline (references, claims, code, web-enrichment) is in v1 scope.
 
@@ -62,8 +62,7 @@ None yet.
 
 ### Blockers/Concerns
 
-- **Open fork (capture topology):** confirm the local capture paths to build in the Phase 1 re-plan — manual-drop + URL intake are decided; is the **local Telegram long-polling bot** in for v1, and is **saved-collection sync** wanted (opt-in) or dropped? Defaults recorded: Telegram = optional, sync = deferred/opt-in.
-- **Account-ban risk (per research PDF):** all programmatic IG access is unofficial; keep download low-and-slow, your-account-only, cookie-based; manual-drop is the safe path.
+- **Account-ban risk (per research PDF):** all programmatic IG access is unofficial; keep download (and the opt-in CAP-05 sync) low-and-slow, your-account-only, cookie-based; manual-drop is the safe path.
 - **Code rework:** Phase 1 (skeleton/capture/ingest) and Phase 2's runtime (queue + data model) must move off Workers/Queues/D1/R2/Containers to Bun/local-queue/`bun:sqlite`/disk. No code deleted yet — defer to the Phase 1 re-plan/execute.
 - Phase 5 open fork: catalog wall shows *generated artifacts*, not reel thumbnails (user clarification). Whether artifacts are auto-generated per finding or curated needs a Phase 5 discussion (see REQUIREMENTS ART-01).
 
@@ -76,5 +75,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-05-26
-Stopped at: Architecture pivoted to local-first and planning docs updated (PROJECT/REQUIREMENTS/ROADMAP/STATE); `yt-dlp --cookies-from-browser` download validated locally; `scripts/fetch-reel.ts` added. Next: confirm the capture-topology open fork (Telegram bot in/out, sync in/out), then `/gsd-plan-phase 1` to re-platform capture+ingest to local (Bun app skeleton, `bun:sqlite` schema, drop-folder watcher + URL intake, local ingest worker around yt-dlp+ffmpeg, local SQLite-backed queue), carrying the portable Groq/Claude enrichment logic forward.
+Stopped at: Architecture pivoted to local-first; planning docs updated (PROJECT/REQUIREMENTS/ROADMAP/STATE); capture topology resolved (Telegram dropped for v1; capture = drop-folder + URL intake + opt-in CAP-05 saved-collection sync); `yt-dlp --cookies-from-browser` download validated locally; `scripts/fetch-reel.ts` added. Next: `/gsd-plan-phase 1` to re-platform capture+ingest to local — Bun app skeleton, `bun:sqlite` schema, drop-folder watcher + URL intake (CLI/endpoint) + opt-in saved-collection sync, local ingest worker around yt-dlp+ffmpeg, local SQLite-backed queue — carrying the portable Groq/Claude enrichment logic forward.
 Resume file: None

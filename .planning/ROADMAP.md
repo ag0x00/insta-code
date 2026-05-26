@@ -2,7 +2,7 @@
 
 ## Overview
 
-Build a self-hosted reel research system as a thin end-to-end spine first, then deepen the intelligence. Phase 1 stands up **local** capture (manual-drop folder + URL intake, optionally a local Telegram bot) and ingestion (yt-dlp-with-cookies download + audio/keyframe/metadata extraction) so a captured reel produces a stored finding. Phase 2 adds understanding (transcription + visual analysis). Phase 3 adds the analysis/enrichment layer (references, claims, code, web search). Phase 4 turns findings into a real knowledge system (tags, categories, cross-references, code library, search). Phase 5 delivers the visual, animated catalog browser. Each phase leaves a usable system.
+Build a self-hosted reel research system as a thin end-to-end spine first, then deepen the intelligence. Phase 1 stands up **local** capture (manual-drop folder + URL intake + opt-in saved-collection sync) and ingestion (yt-dlp-with-cookies download + audio/keyframe/metadata extraction) so a captured reel produces a stored finding. Phase 2 adds understanding (transcription + visual analysis). Phase 3 adds the analysis/enrichment layer (references, claims, code, web search). Phase 4 turns findings into a real knowledge system (tags, categories, cross-references, code library, search). Phase 5 delivers the visual, animated catalog browser. Each phase leaves a usable system.
 
 > **Architecture pivot (2026-05-26):** the system is now **local-first** (Bun + SQLite + local media + a local SQLite-backed job queue) instead of all-Cloudflare. Reason: Instagram 403s Cloudflare datacenter IPs for reel media, and reliable download needs a residential IP + the user's browser cookies — both of which a local host provides. Validated: `yt-dlp --cookies-from-browser chrome` pulled a 53.9 MiB reel locally. The Phase 1 & 2 code was built against the (now-reverted) Cloudflare stack and **needs re-platforming to local** — re-plan via `/gsd-plan-phase 1`. The Phase 2 *enrichment logic* (Groq transcription, Claude vision, pure parsers) is runtime-portable and largely survives; only its runtime (Workers/Queues/D1/R2 → Bun/local-queue/SQLite/disk) changes.
 
@@ -17,10 +17,10 @@ Build a self-hosted reel research system as a thin end-to-end spine first, then 
 ## Phase Details
 
 ### Phase 1: Capture & Ingest Spine
-**Goal**: Stand up the always-on **local** service so capturing a reel link (via CLI / local endpoint / optional local Telegram bot) or dropping a video file results in downloaded media (yt-dlp with browser cookies), extracted audio + keyframes + metadata, and a stored finding record — processed via a local durable (SQLite-backed) job queue.
+**Goal**: Stand up the always-on **local** service so capturing a reel link (via CLI / local endpoint), dropping a video file, or (opt-in) syncing a saved Instagram collection results in downloaded media (yt-dlp with browser cookies), extracted audio + keyframes + metadata, and a stored finding record — processed via a local durable (SQLite-backed) job queue.
 **Depends on**: Nothing (first phase)
 **Mode:** mvp
-**Requirements**: CAP-01, CAP-02, CAP-03, CAP-04, ING-01, ING-02, ING-03, ING-04, ING-05, KB-01, OPS-01, OPS-02, OPS-03, OPS-04
+**Requirements**: CAP-01, CAP-02, CAP-03, CAP-04, CAP-05, ING-01, ING-02, ING-03, ING-04, ING-05, KB-01, OPS-01, OPS-02, OPS-03, OPS-04
 **Success Criteria** (what must be TRUE):
   1. User can hand a reel link to the local system (and/or drop a video file) and get a completion/failure result
   2. When link download fails, a dropped video file lets processing continue
@@ -31,7 +31,7 @@ Build a self-hosted reel research system as a thin end-to-end spine first, then 
 
 Plans (⚠️ built against reverted all-Cloudflare arch — superseded by local-first re-plan):
 - [~] 01-01: ~~Cloudflare project skeleton + data model (Wrangler, D1/R2/Queue bindings)~~ → re-do as Bun app skeleton + `bun:sqlite` schema + local media dirs
-- [~] 01-02: ~~Capture Worker — grammY Telegram webhook, file-to-R2, enqueue~~ → re-do as local intake (drop-folder watcher + URL CLI/endpoint, optional grammY long-polling bot), enqueue to local queue
+- [~] 01-02: ~~Capture Worker — grammY Telegram webhook, file-to-R2, enqueue~~ → re-do as local intake (drop-folder watcher + URL CLI/endpoint + opt-in saved-collection sync), enqueue to local queue. Telegram dropped for v1.
 - [~] 01-03: ~~Ingest Container + Queue consumer~~ → re-do as local ingest worker (yt-dlp `--cookies-from-browser` + ffmpeg as local processes), finding finalization, local notify
 
 _Original Cloudflare implementation built + locally verified (tsc, bun test, D1 migration, wrangler dry-run) but **reverted** by the 2026-05-26 pivot. Needs re-platforming to local-first via `/gsd-plan-phase 1`. The validated `scripts/fetch-reel.ts` yt-dlp wrapper is the seed of the new local download step._
